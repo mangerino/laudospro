@@ -367,6 +367,7 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
     <div class="topbar-actions">
       <div id="topbar-extra"></div>
       <div class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Alternar tema claro/escuro">🌙</div>
+      <button class="btn" onclick="salvarBackupNoDrive()" title="Salvar backup no Google Drive" id="topbar-gdrive-btn">☁️ Salvar na Nuvem</button>
       <button class="btn btn-primary" onclick="openNovoLaudo()">➕ Novo Laudo</button>
     </div>
   </div>
@@ -1985,6 +1986,11 @@ function atualizarStatusGDrive(){
   const el=document.getElementById('gdrive-status');if(el)el.textContent=texto;
   const q=document.getElementById('gdrive-quick-status');
   if(q)q.textContent=last?`✓ ${new Date(last).toLocaleDateString('pt-BR')}`:'Google Drive';
+  const tb=document.getElementById('topbar-gdrive-btn');
+  if(tb){
+    tb.textContent=conectado?'☁️✓ Salvo na Nuvem':'☁️ Salvar na Nuvem';
+    tb.title=last?`Último envio ao Drive: ${new Date(last).toLocaleString('pt-BR')}`:'Salvar backup no Google Drive';
+  }
 }
 
 // ════════════════════════════════════════
@@ -3909,6 +3915,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('cnt-clientes').textContent=DB.clientes.length;
   document.getElementById('cnt-equipamentos').textContent=DB.equips.length;
   renderDashboard();calcHRN();updateCatOpts();renderCalibDash&&renderCalibDash();
+  atualizarStatusGDrive();
   if(!c.apikey)setTimeout(()=>notif('Configure sua chave gratuita do OpenRouter em Configurações para usar a IA.','info'),1500);
 });
 </script>
