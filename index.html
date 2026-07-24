@@ -521,7 +521,34 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
     <div class="card"><div class="card-hdr"><span class="card-title">📅 Calculadora Prazos NR-13</span></div><div class="card-body">
       <div class="fg mb-12"><label class="fl">Tipo</label><select class="fs" id="p-tipo" onchange="updateCatOpts();calcPrazo()"><option value="vaso">Vaso de Pressão</option><option value="caldeira">Caldeira</option></select></div>
-      <div class="fg mb-12"><label class="fl">Categoria</label><select class="fs" id="p-cat" onchange="calcPrazo()"><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option></select></div>
+
+      <div id="p-classe-wrap" style="margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg2)">
+        <div class="text-xs mb-8" style="font-weight:600">💧 Classe do Fluido (NR-13, 13.5.1.1.1) — define a Categoria automaticamente</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div id="p-classe-A" onclick="pSelecionarClasseFluido('A')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center">
+            <div style="font-size:12px;font-weight:700;color:var(--red)">CLASSE A</div>
+            <div style="font-size:9.5px;color:var(--text3)">Inflamável/tóxico</div>
+          </div>
+          <div id="p-classe-B" onclick="pSelecionarClasseFluido('B')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center">
+            <div style="font-size:12px;font-weight:700;color:var(--orange)">CLASSE B</div>
+            <div style="font-size:9.5px;color:var(--text3)">Vapor/ar/não tóxico</div>
+          </div>
+          <div id="p-classe-C" onclick="pSelecionarClasseFluido('C')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center">
+            <div style="font-size:12px;font-weight:700;color:var(--green)">CLASSE C</div>
+            <div style="font-size:9.5px;color:var(--text3)">Não perigoso</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;margin-bottom:10px">
+          <div class="fg"><label class="fl" style="font-size:9.5px">Volume (m³)</label><input class="fi" id="p-vol" type="number" step="0.01" placeholder="Ex: 2.5" oninput="pCalcGrupoPotencial()"></div>
+          <div class="fg"><label class="fl" style="font-size:9.5px">PMTA (kgf/cm²)</label><input class="fi" id="p-pmta" type="number" step="0.1" placeholder="Ex: 15" oninput="pCalcGrupoPotencial()"></div>
+          <div class="fg"><label class="fl" style="font-size:9.5px">PV (m³·kgf/cm²)</label><input class="fi" id="p-pv" readonly style="background:var(--bg3);font-weight:700" placeholder="—"></div>
+        </div>
+        <div id="p-cat-auto-res" style="display:none;padding:8px 12px;border-radius:var(--r);background:var(--blue-dim);border:1px solid rgba(88,166,255,.3);font-size:11.5px;font-weight:600;color:var(--blue)">
+          🎯 <span id="p-cat-auto-txt">—</span>
+        </div>
+      </div>
+
+      <div class="fg mb-12"><label class="fl">Categoria <span class="text-xs" style="font-weight:400;color:var(--text3)" id="p-cat-origem"></span></label><select class="fs" id="p-cat" onchange="document.getElementById('p-cat-origem').textContent='';calcPrazo()"><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option></select></div>
       <div class="fg mb-12"><label class="fl">Possui SPIE?</label><select class="fs" id="p-spie" onchange="calcPrazo()"><option value="0">Não</option><option value="1">Sim</option></select></div>
       <div class="fg mb-12"><label class="fl">Última Inspeção Externa</label><input type="date" class="fi" id="p-ext" onchange="calcPrazo()"></div>
       <div class="fg mb-12" id="p-int-wrap"><label class="fl">Última Inspeção Interna</label><input type="date" class="fi" id="p-int" onchange="calcPrazo()"></div>
@@ -2916,6 +2943,48 @@ function updateCatOpts(){
   const sel=document.getElementById('p-cat');
   sel.innerHTML=tipo==='caldeira'?'<option value="A">A</option><option value="B">B</option>':'<option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option>';
   document.getElementById('p-ei-wrap').style.display=tipo==='caldeira'?'none':'flex';
+  const cw=document.getElementById('p-classe-wrap');
+  if(cw)cw.style.display=tipo==='caldeira'?'none':'block';
+  const origem=document.getElementById('p-cat-origem');
+  if(origem)origem.textContent='';
+}
+
+// ─── Classe do Fluido + Grupo Potencial de Risco → Categoria automática ──
+window._pClasseFluido='';
+window._pGrupo='';
+function pSelecionarClasseFluido(cls){
+  window._pClasseFluido=cls;
+  ['A','B','C'].forEach(c=>{
+    const el=document.getElementById('p-classe-'+c);
+    if(el)el.style.borderColor='var(--border2)';
+  });
+  const cores={A:'var(--red)',B:'var(--orange)',C:'var(--green)'};
+  const sel=document.getElementById('p-classe-'+cls);
+  if(sel)sel.style.borderColor=cores[cls]||'var(--blue)';
+  pAplicarCategoriaAutomatica();
+}
+function pCalcGrupoPotencial(){
+  const vol=parseFloat(document.getElementById('p-vol')?.value||0);
+  const pmta=parseFloat(document.getElementById('p-pmta')?.value||0);
+  const pvEl=document.getElementById('p-pv');
+  if(!vol||!pmta){if(pvEl)pvEl.value='';window._pGrupo='';pAplicarCategoriaAutomatica();return;}
+  const pv=vol*pmta;
+  if(pvEl)pvEl.value=pv.toFixed(2);
+  window._pGrupo=pv<8?'1':pv<100?'2':'3';
+  pAplicarCategoriaAutomatica();
+}
+function pAplicarCategoriaAutomatica(){
+  const cls=window._pClasseFluido,grp=window._pGrupo;
+  const resBox=document.getElementById('p-cat-auto-res'),resTxt=document.getElementById('p-cat-auto-txt'),origem=document.getElementById('p-cat-origem');
+  if(!cls||!grp){if(resBox)resBox.style.display='none';return;}
+  // Tabela NR-13, item 13.5.1.1: Classe do Fluido × Grupo Potencial de Risco → Categoria do vaso
+  const tabela={'A1':'IV','A2':'III','A3':'III','B1':'III','B2':'II','B3':'II','C1':'I','C2':'I','C3':'II'};
+  const cat=tabela[cls+grp]||'II';
+  document.getElementById('p-cat').value=cat;
+  if(resBox)resBox.style.display='block';
+  if(resTxt)resTxt.textContent=`Categoria ${cat} — Classe ${cls} de fluido + Grupo ${grp} de potencial de risco (NR-13)`;
+  if(origem)origem.textContent='(definida automaticamente)';
+  calcPrazo();
 }
 function calcPrazo(){
   const tipo=document.getElementById('p-tipo').value,cat=document.getElementById('p-cat').value;
