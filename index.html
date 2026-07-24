@@ -1510,17 +1510,18 @@ function filtrarLaudoNorma(v){fNorma=v;filtrarLaudos()}
 
 // ─── VER LAUDO ───────────────────────────────────────────
 let laudoVerandoId=null;
-function verLaudo(id){
+async function verLaudo(id){
   const l=DB.laudos.find(x=>x.id===id);if(!l)return;
   laudoVerandoId=id;
   document.getElementById('ver-title').textContent=`Laudo ${l.id}`;
   const nrCls=(l.norma||'').toLowerCase().replace('-','');
   const ncItems=(l.checklist||[]).filter(c=>c.resp==='NC');
 
+  const fotosLaudo=(l.fotos&&l.fotos.length)?l.fotos:(l.fotosDriveId?await obterFotosDoLaudo(l):[]);
   let fotosHtml='';
-  if(l.fotos&&l.fotos.length){
-    fotosHtml=`<div class="mb-12"><div class="text-xs mb-8" style="font-weight:600">📷 Registro Fotográfico (${l.fotos.length} fotos)</div><div class="photo-grid">`;
-    l.fotos.forEach(f=>{fotosHtml+=`<div class="photo-thumb"><img src="${f.data}" alt="${f.legenda||''}"><div class="ph-cap">${f.legenda||''}</div></div>`});
+  if(fotosLaudo&&fotosLaudo.length){
+    fotosHtml=`<div class="mb-12"><div class="text-xs mb-8" style="font-weight:600">📷 Registro Fotográfico (${fotosLaudo.length} fotos)</div><div class="photo-grid">`;
+    fotosLaudo.forEach(f=>{fotosHtml+=`<div class="photo-thumb"><img src="${f.data}" alt="${f.legenda||''}"><div class="ph-cap">${f.legenda||''}</div></div>`});
     fotosHtml+='</div></div>';
   }
 
@@ -1582,12 +1583,17 @@ function editarLaudoVer(){
   closeModal('modal-ver');
   editarLaudo(laudoVerandoId);
 }
-function imprimirLaudo(){
+async function imprimirLaudo(){
   if(!laudoVerandoId)return;
   const l=DB.laudos.find(x=>x.id===laudoVerandoId);
   if(!l)return;
   const win=window.open('','_blank');
-  win.document.write(gerarImpressao(l,DB.cfg));
+  if(l.fotosDriveId&&(!l.fotos||!l.fotos.length)){
+    win.document.write('<p style="font-family:sans-serif;padding:24px;color:#555">Carregando fotos do Google Drive...</p>');
+  }
+  const fotos=(l.fotos&&l.fotos.length)?l.fotos:(l.fotosDriveId?await obterFotosDoLaudo(l):[]);
+  win.document.open();
+  win.document.write(gerarImpressao({...l,fotos},DB.cfg));
   win.document.close();
   win.focus();
   setTimeout(()=>win.print(),600);
@@ -1735,7 +1741,6 @@ ${l.artNum?`<h2>8. ART</h2><div class="box">ART Nº ${l.artNum} — Emitida em $
     <div>Adamantina / SP</div>
     <div style="margin-top:3px"><a href="mailto:junamar@junamar.com" style="color:#1a6fc4;text-decoration:none">junamar@junamar.com</a></div>
     <div><a href="http://www.junamar.com" style="color:#1a6fc4;text-decoration:none">www.junamar.com</a></div>
-    <div style="margin-top:5px;font-size:8.5px;color:#aaa">Gerado por LaudosPRO v9 · ${new Date().toLocaleString('pt-BR')}</div>
     ${l.validade?`<div style="margin-top:3px;font-weight:700;color:#222;font-size:10px">Validade: ${l.validade}</div>`:''}
   </div>
 </div>
@@ -1993,6 +1998,80 @@ function atualizarStatusGDrive(){
   }
 }
 
+// ─── FOTOS DE LAUDOS NO GOOGLE DRIVE (evita limite de ~5MB do localStorage) ──
+// Quando não há espaço local suficiente para salvar um laudo com fotos, elas
+// são enviadas automaticamente ao Google Drive (um arquivo JSON por laudo) e
+// apenas uma referência (fotosDriveId) fica salva localmente. As fotos são
+// buscadas do Drive sob demanda ao visualizar, editar ou imprimir o laudo.
+window._fotosDriveCache=window._fotosDriveCache||{};
+
+async function _gdriveGarantirConectado(){
+  if(gdriveAccessToken)return true;
+  if(!_gdriveClientId())return false;
+  return new Promise(resolve=>{
+    conectarGoogleDrive(()=>resolve(!!gdriveAccessToken));
+    setTimeout(()=>resolve(!!gdriveAccessToken),10000);
+  });
+}
+
+async function gdriveSalvarFotosLaudo(laudoId,fotos,fileIdExistente){
+  const ok=await _gdriveGarantirConectado();
+  if(!ok)throw new Error('Google Drive não conectado');
+  const nomeArquivo=`laudospro-fotos-${laudoId}.json`;
+  const blob=new Blob([JSON.stringify({laudoId,fotos,dt:new Date().toISOString()})],{type:'application/json'});
+  const form=new FormData();
+  form.append('metadata',new Blob([JSON.stringify({name:nomeArquivo,mimeType:'application/json'})],{type:'application/json'}));
+  form.append('file',blob);
+  let url,method;
+  if(fileIdExistente){url=`https://www.googleapis.com/upload/drive/v3/files/${fileIdExistente}?uploadType=multipart`;method='PATCH';}
+  else{url='https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';method='POST';}
+  let res=await fetch(url,{method,headers:{Authorization:`Bearer ${gdriveAccessToken}`},body:form});
+  if(res.status===401){
+    gdriveAccessToken=null;
+    const ok2=await _gdriveGarantirConectado();
+    if(!ok2)throw new Error('Falha de autenticação com o Google');
+    return gdriveSalvarFotosLaudo(laudoId,fotos,fileIdExistente);
+  }
+  if(res.status===404&&fileIdExistente){
+    return gdriveSalvarFotosLaudo(laudoId,fotos,null);
+  }
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  window._fotosDriveCache[data.id]=fotos;
+  return data.id;
+}
+
+async function gdriveCarregarFotosLaudo(fileId){
+  const ok=await _gdriveGarantirConectado();
+  if(!ok)throw new Error('Google Drive não conectado');
+  const res=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,{headers:{Authorization:`Bearer ${gdriveAccessToken}`}});
+  if(res.status===401){
+    gdriveAccessToken=null;
+    const ok2=await _gdriveGarantirConectado();
+    if(!ok2)throw new Error('Falha de autenticação com o Google');
+    return gdriveCarregarFotosLaudo(fileId);
+  }
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  return data.fotos||[];
+}
+
+// Retorna as fotos do laudo (locais ou buscadas do Drive), com cache em memória.
+async function obterFotosDoLaudo(l){
+  if(l.fotos&&l.fotos.length)return l.fotos;
+  if(!l.fotosDriveId)return[];
+  if(window._fotosDriveCache[l.fotosDriveId])return window._fotosDriveCache[l.fotosDriveId];
+  try{
+    notif('Carregando fotos do Google Drive...','info');
+    const fotos=await gdriveCarregarFotosLaudo(l.fotosDriveId);
+    window._fotosDriveCache[l.fotosDriveId]=fotos;
+    return fotos;
+  }catch(e){
+    notif('Não foi possível carregar as fotos do Google Drive: '+e.message,'err');
+    return[];
+  }
+}
+
 // ════════════════════════════════════════
 // ─── CLIENTES ──────────────────────────────────────────────
 // ════════════════════════════════════════
@@ -2123,7 +2202,7 @@ function deletarEquip(id){if(!confirm('Excluir equipamento?'))return;DB.equips=D
 // ════════════════════════════════════════
 // ─── NOVO LAUDO ──────────────────────────────────────────
 // ════════════════════════════════════════
-let ldStep=1,ldFotos=[],ldCheckState={},ldEditId=null,ldARTPDFData=null;
+let ldStep=1,ldFotos=[],ldCheckState={},ldEditId=null,ldARTPDFData=null,ldFotosDriveId=null,ldFotosCarregando=false;
 
 const ITENS_BY_TIPO={
   'Caminhão Munck':['Pinhão do mastro (trincas/rachaduras)','Pinos das lanças (trincas/deformações)','Conexões hidráulicas (vazamentos)','Mangueiras (fissuras/inchaços)','Parafusos de fixação das sapatas (aperto)','Lança (empeno)','Lança (folga excessiva)','Moitão e trava de segurança do guincho','Manetes de comando (vazamento/operação)','Patolas/estabilizadores (funcionamento)','Tabela de içamento de carga (legível/acessível)','Indicador de carga na lança','Nível de óleo hidráulico','Bomba hidráulica (funcionamento/vazamento)','Cabo de aço do guincho (condições/fios rompidos)'],
@@ -2183,7 +2262,7 @@ const CHECKLISTS_NR={
 };
 
 function openNovoLaudo(cliId=null){
-  ldStep=1;ldFotos=[];ldCheckState={};ldEditId=null;ldARTPDFData=null;
+  ldStep=1;ldFotos=[];ldCheckState={};ldEditId=null;ldARTPDFData=null;ldFotosDriveId=null;ldFotosCarregando=false;
   window.ldItensState={};
   ['ld-id','ld-tag','ld-norma','ld-fab','ld-modelo','ld-cap','ld-serie','ld-km','ld-art','ld-numinsp','ld-consinit','ld-cond','ld-nc','ld-conc','ld-risco','ld-validade','ld-art-num','ld-art-val','ld-prof'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   document.getElementById('ld-data').value=new Date().toISOString().split('T')[0];
@@ -2206,10 +2285,10 @@ function openNovoLaudo(cliId=null){
 }
 function openNovoLaudoCliente(cliId){openNovoLaudo(cliId)}
 
-function editarLaudo(id){
+async function editarLaudo(id){
   const l=DB.laudos.find(x=>x.id===id);if(!l)return;
   ldStep=1;ldEditId=id;ldFotos=l.fotos?JSON.parse(JSON.stringify(l.fotos)):[];ldCheckState={};
-  ldARTPDFData=null;
+  ldARTPDFData=null;ldFotosDriveId=l.fotosDriveId||null;ldFotosCarregando=false;
   document.getElementById('mlaudo-title').textContent='Editar Laudo '+l.id;
   document.getElementById('ld-id').value=l.id;
   const sel=document.getElementById('ld-cli');
@@ -2273,6 +2352,21 @@ function editarLaudo(id){
   }
   renderLaudoStep(1);
   openModal('modal-laudo');
+  // Se as fotos deste laudo foram salvas no Google Drive (por falta de espaço
+  // local), busca-as em segundo plano para permitir visualização/edição.
+  if(l.fotosDriveId&&!ldFotos.length){
+    ldFotosCarregando=true;
+    document.getElementById('photo-count').textContent='☁️ Carregando fotos do Google Drive...';
+    obterFotosDoLaudo(l).then(fotos=>{
+      if(ldEditId!==id)return;
+      ldFotos=fotos.map(f=>({...f}));
+      renderFotos();
+    }).finally(()=>{
+      if(ldEditId!==id)return;
+      ldFotosCarregando=false;
+      document.getElementById('photo-count').textContent=ldFotos.length?`${ldFotos.length} foto(s) adicionada(s)`:'Nenhuma foto adicionada';
+    });
+  }
 }
 
 function loadEquipsByCliente(){
@@ -2426,7 +2520,7 @@ function renderFotos(){
       <div class="ph-cap">${f.legenda||'Figura '+(i+1)+' — Clique para adicionar legenda'}</div>
     </div>`).join('');
 }
-function removerFoto(i){ldFotos.splice(i,1);renderFotos()}
+function removerFoto(i){ldFotos.splice(i,1);if(!ldFotos.length)ldFotosDriveId=null;renderFotos()}
 function editarLegenda(i){
   const leg=prompt('Legenda da foto (ex: Figura 2 – Pinhão do Mastro do Munck):',ldFotos[i].legenda||'Figura '+(i+1));
   if(leg!==null){ldFotos[i].legenda=leg;renderFotos()}
@@ -2630,9 +2724,10 @@ Escreva APENAS o texto da conclusão, sem título, sem tópicos, sem prefácio.`
 function usarConcIA(){const txt=document.getElementById('ia-conc-out').textContent;if(txt&&!txt.includes('⚠')&&!txt.includes('Clique')){document.getElementById('ld-conc').value=txt;notif('Texto inserido!','ok')}}
 function copiarIA(){const txt=document.getElementById('ia-rec-out').textContent;navigator.clipboard?.writeText(txt).then(()=>notif('Copiado!','ok'))}
 
-function salvarLaudo(){
+async function salvarLaudo(){
   const conc=document.getElementById('ld-conc').value.trim();
   if(!conc){notif('Adicione a conclusão do laudo.','err');return}
+  if(ldFotosCarregando){notif('Aguarde o carregamento das fotos do Google Drive antes de salvar.','err');return}
   const statusVal=document.getElementById('ld-status').value;
   const novo=_coletarDadosLaudo(statusVal);
   // Verifica espaço
@@ -2640,9 +2735,16 @@ function salvarLaudo(){
     notif('Espaço de armazenamento insuficiente. Exporte o backup e limpe dados antigos.','err');return;
   }
   if(ldFotos.length>0&&!_verificarEspacoLocalStorage(novo)){
-    const dica=_obterDicasCompressao();
-    if(!confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s).\n\n${dica}\n\nDeseja salvar o laudo SEM as fotos?`)){return;}
-    novo.fotos=[];
+    try{
+      notif('Espaço local insuficiente — enviando fotos ao Google Drive...','info');
+      const fileId=await gdriveSalvarFotosLaudo(novo.id,ldFotos,ldFotosDriveId);
+      novo.fotosDriveId=fileId;novo.fotos=[];ldFotosDriveId=fileId;
+      notif('Fotos salvas no Google Drive (armazenamento local insuficiente).','ok');
+    }catch(e){
+      const dica=_obterDicasCompressao();
+      if(!confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s) e não foi possível enviar ao Google Drive (${e.message}).\n\n${dica}\n\nDeseja salvar o laudo SEM as fotos?`)){return;}
+      novo.fotos=[];
+    }
   }
   const eqId=document.getElementById('ld-eq').value;
   const e=DB.equips.find(x=>x.id===eqId);
@@ -2696,6 +2798,7 @@ function _coletarDadosLaudo(status){
     nc:document.getElementById('ld-nc').value,
     profissionalIdx:document.getElementById('ld-prof')?.value||'',
     fotos:ldFotos,
+    fotosDriveId:ldFotosDriveId||undefined,
     itens:itensArr,
     checklist:Object.values(ldCheckState),
     recomendacoes:document.getElementById('ia-rec-out')?.textContent.includes('Clique')?'':document.getElementById('ia-rec-out')?.textContent||'',
@@ -2732,10 +2835,11 @@ function _verificarEspacoLocalStorage(dados){
   }catch(e){return false;}
 }
 
-function salvarRascunho(){
+async function salvarRascunho(){
   const cliId=document.getElementById('ld-cli').value;
   const eqId=document.getElementById('ld-eq').value;
   if(!cliId||!eqId){notif('Selecione cliente e equipamento primeiro.','err');return;}
+  if(ldFotosCarregando){notif('Aguarde o carregamento das fotos do Google Drive antes de salvar.','err');return}
   const novo=_coletarDadosLaudo('Rascunho');
   // Verifica espaço sem fotos
   const semFotos={...novo,fotos:[]};
@@ -2745,12 +2849,19 @@ function salvarRascunho(){
   }
   // Verifica com fotos
   if(ldFotos.length>0&&!_verificarEspacoLocalStorage(novo)){
-    const dica=_obterDicasCompressao();
-    if(confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s).\n\n${dica}\n\nDeseja salvar o rascunho SEM as fotos para não perder o conteúdo?`)){
-      novo.fotos=[];
-      notif('Rascunho salvo sem fotos (espaço insuficiente).','info');
-    } else {
-      return;
+    try{
+      notif('Espaço local insuficiente — enviando fotos ao Google Drive...','info');
+      const fileId=await gdriveSalvarFotosLaudo(novo.id,ldFotos,ldFotosDriveId);
+      novo.fotosDriveId=fileId;novo.fotos=[];ldFotosDriveId=fileId;
+      notif('Rascunho salvo — fotos armazenadas no Google Drive (espaço local insuficiente).','ok');
+    }catch(e){
+      const dica=_obterDicasCompressao();
+      if(confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s) e não foi possível enviar ao Google Drive (${e.message}).\n\n${dica}\n\nDeseja salvar o rascunho SEM as fotos para não perder o conteúdo?`)){
+        novo.fotos=[];
+        notif('Rascunho salvo sem fotos (espaço insuficiente).','info');
+      } else {
+        return;
+      }
     }
   }
   try{
@@ -3170,16 +3281,20 @@ function baixarARTPDF(){
   a.click();
 }
 
-function baixarLaudoPDF(){
+async function baixarLaudoPDF(){
   if(!laudoVerandoId)return;
   const l=DB.laudos.find(x=>x.id===laudoVerandoId);if(!l)return;
-  const html=gerarImpressao(l,DB.cfg);
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`Laudo-${l.id}-${l.tag||'equip'}.html`;a.click();
-  URL.revokeObjectURL(url);
-  notif('Laudo baixado! Abra o arquivo e imprima como PDF.','ok');
+  const win=window.open('','_blank');
+  if(l.fotosDriveId&&(!l.fotos||!l.fotos.length)){
+    win.document.write('<p style="font-family:sans-serif;padding:24px;color:#555">Carregando fotos do Google Drive...</p>');
+  }
+  const fotos=(l.fotos&&l.fotos.length)?l.fotos:(l.fotosDriveId?await obterFotosDoLaudo(l):[]);
+  win.document.open();
+  win.document.write(gerarImpressao({...l,fotos},DB.cfg));
+  win.document.close();
+  win.focus();
+  notif('Use "Salvar como PDF" na janela de impressão para baixar o laudo em PDF.','ok');
+  setTimeout(()=>win.print(),600);
 }
 
 function usarRiscoIA(){
