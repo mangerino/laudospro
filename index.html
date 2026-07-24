@@ -1035,7 +1035,7 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
           </div>
           <div class="sec-card-body">
             <p class="text-sm mb-12" style="color:var(--text2)">Selecione a classe do fluido contido no vaso conforme NR-13, item 13.5.1.1.1. A classe influencia diretamente a categoria do vaso.</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;margin-bottom:14px">
               <div id="fl-classe-A" onclick="selecionarClasseFluido('A')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:12px;background:var(--bg2);transition:all .15s">
                 <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:6px">CLASSE A</div>
                 <div style="font-size:11px;color:var(--text2);line-height:1.6">
@@ -1053,8 +1053,13 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
               <div id="fl-classe-C" onclick="selecionarClasseFluido('C')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:12px;background:var(--bg2);transition:all .15s">
                 <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px">CLASSE C</div>
                 <div style="font-size:11px;color:var(--text2);line-height:1.6">
-                  <strong>Fluidos não perigosos</strong> — fluidos não inflamáveis, não tóxicos, não reativos, que no caso de vazamento não apresentam riscos apreciáveis.<br><br>
-                  Exemplos: água quente acima de 45°C, fluidos não inflamáveis e não tóxicos em geral.
+                  <strong>Vapor de água, gases asfixiantes simples ou ar comprimido</strong>.
+                </div>
+              </div>
+              <div id="fl-classe-D" onclick="selecionarClasseFluido('D')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:12px;background:var(--bg2);transition:all .15s">
+                <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:6px">CLASSE D</div>
+                <div style="font-size:11px;color:var(--text2);line-height:1.6">
+                  <strong>Outros fluidos</strong> não enquadrados nas classes anteriores.
                 </div>
               </div>
             </div>
@@ -1089,18 +1094,26 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
               </div>
               <button class="btn btn-primary" onclick="calcGrupoPotencial()">Calcular</button>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:10px;margin-bottom:12px">
               <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-1">
-                <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:4px">GRUPO 1</div>
-                <div style="font-size:10.5px;color:var(--text2)">PV &lt; 8 m³·kgf/cm²<br>Baixo potencial de risco</div>
+                <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px">GRUPO 1</div>
+                <div style="font-size:10.5px;color:var(--text2)">PV ≥ 100</div>
               </div>
               <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-2">
-                <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:4px">GRUPO 2</div>
-                <div style="font-size:10.5px;color:var(--text2)">8 ≤ PV &lt; 100 m³·kgf/cm²<br>Médio potencial de risco</div>
+                <div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:4px">GRUPO 2</div>
+                <div style="font-size:10.5px;color:var(--text2)">30 ≤ PV &lt; 100</div>
               </div>
               <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-3">
-                <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px">GRUPO 3</div>
-                <div style="font-size:10.5px;color:var(--text2)">PV ≥ 100 m³·kgf/cm²<br>Alto potencial de risco</div>
+                <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:4px">GRUPO 3</div>
+                <div style="font-size:10.5px;color:var(--text2)">2,5 ≤ PV &lt; 30</div>
+              </div>
+              <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-4">
+                <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:4px">GRUPO 4</div>
+                <div style="font-size:10.5px;color:var(--text2)">1 ≤ PV &lt; 2,5</div>
+              </div>
+              <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-5">
+                <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:4px">GRUPO 5</div>
+                <div style="font-size:10.5px;color:var(--text2)">PV &lt; 1</div>
               </div>
             </div>
             <div id="nr13-grupo-sel" style="display:none;padding:10px 14px;border-radius:var(--r);background:var(--blue-dim);border:1px solid rgba(88,166,255,.3);font-size:12px;font-weight:600;color:var(--blue)">
@@ -3792,16 +3805,16 @@ window._nr13Grupo = '';
 
 function selecionarClasseFluido(cls){
   window._nr13ClasseFluido = cls;
-  ['A','B','C'].forEach(c=>{
+  ['A','B','C','D'].forEach(c=>{
     const el=document.getElementById('fl-classe-'+c);
     if(!el)return;
     el.style.borderColor='var(--border2)';el.style.background='var(--bg2)';
   });
-  const cores={A:'var(--red)',B:'var(--orange)',C:'var(--green)'};
+  const cores={A:'var(--red)',B:'var(--orange)',C:'var(--green)',D:'var(--blue)'};
   const sel=document.getElementById('fl-classe-'+cls);
   if(sel){sel.style.borderColor=cores[cls]||'var(--blue)';sel.style.background='var(--bg2)';}
   const nomeSel=document.getElementById('fl-classe-nome');
-  if(nomeSel)nomeSel.textContent='Classe '+cls+({A:' — Fluido Perigoso (Inflamável/Tóxico)',B:' — Fluido de Médio Risco (Vapor/Ar/Não tóxico)',C:' — Fluido Não Perigoso'}[cls]||'');
+  if(nomeSel)nomeSel.textContent='Classe '+cls+({A:' — Inflamáveis, Tóxicos (<=20ppm), Hidrogênio, Acetileno',B:' — Combustíveis (T<=200°C), Tóxicos (>20ppm)',C:' — Vapor, Ar comprimido, Gases asfixiantes',D:' — Outros fluidos'}[cls]||'');
   const box=document.getElementById('fl-classe-sel');
   if(box)box.style.display='block';
   calcGrupoPotencial();
@@ -3816,12 +3829,14 @@ function calcGrupoPotencial(){
   if(pvEl)pvEl.value=pv.toFixed(2);
   // Determine group
   let grp='',cor='var(--blue)';
-  if(pv<8){grp='1';cor='var(--green)'}
-  else if(pv<100){grp='2';cor='var(--yellow)'}
-  else{grp='3';cor='var(--red)'}
+  if(pv>=100){grp='1';cor='var(--red)'}
+  else if(pv>=30){grp='2';cor='var(--orange)'}
+  else if(pv>=2.5){grp='3';cor='var(--yellow)'}
+  else if(pv>=1){grp='4';cor='var(--blue)'}
+  else{grp='5';cor='var(--green)'}
   window._nr13Grupo=grp;
   // Highlight group
-  ['1','2','3'].forEach(g=>{
+  ['1','2','3','4','5'].forEach(g=>{
     const el=document.getElementById('grp-'+g);
     if(el)el.style.borderColor='var(--border2)';
   });
@@ -3830,7 +3845,7 @@ function calcGrupoPotencial(){
   const selBox=document.getElementById('nr13-grupo-sel');
   if(selBox)selBox.style.display='block';
   const grpNome=document.getElementById('nr13-grupo-nome');
-  if(grpNome)grpNome.textContent='Grupo '+grp+({1:' (PV < 8)',2:' (8 ≤ PV < 100)',3:' (PV ≥ 100)'}[grp]||'');
+  if(grpNome)grpNome.textContent='Grupo '+grp+({1:' (PV ≥ 100)',2:' (30 ≤ PV < 100)',3:' (2,5 ≤ PV < 30)',4:' (1 ≤ PV < 2,5)',5:' (PV < 1)'}[grp]||'');
   const pvRes=document.getElementById('nr13-pv-res');
   if(pvRes)pvRes.textContent=pv.toFixed(2);
 }
@@ -3841,9 +3856,10 @@ function aplicarGrupoCategoria(){
   if(!cls||!grp){notif('Defina a classe do fluido e calcule o grupo de risco primeiro.','err');return;}
   // Tabela NR-13: Classe × Grupo → Categoria sugerida
   const tabela={
-    'A1':'IV','A2':'III','A3':'III',
-    'B1':'III','B2':'II','B3':'II',
-    'C1':'I','C2':'I','C3':'II',
+    'A1':'I','A2':'I','A3':'II','A4':'III','A5':'III',
+    'B1':'I','B2':'II','B3':'III','B4':'IV','B5':'IV',
+    'C1':'I','C2':'II','C3':'III','C4':'IV','C5':'V',
+    'D1':'II','D2':'III','D3':'IV','D4':'V','D5':'V',
   };
   const cat=tabela[cls+grp]||'II';
   // Pre-fill the category selects
