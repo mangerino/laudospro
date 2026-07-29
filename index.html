@@ -367,7 +367,6 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
     <div class="topbar-actions">
       <div id="topbar-extra"></div>
       <div class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Alternar tema claro/escuro">🌙</div>
-      <button class="btn" onclick="salvarBackupNoDrive()" title="Salvar backup no Google Drive" id="topbar-gdrive-btn">☁️ Salvar na Nuvem</button>
       <button class="btn btn-primary" onclick="openNovoLaudo()">➕ Novo Laudo</button>
     </div>
   </div>
@@ -521,34 +520,7 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
     <div class="card"><div class="card-hdr"><span class="card-title">📅 Calculadora Prazos NR-13</span></div><div class="card-body">
       <div class="fg mb-12"><label class="fl">Tipo</label><select class="fs" id="p-tipo" onchange="updateCatOpts();calcPrazo()"><option value="vaso">Vaso de Pressão</option><option value="caldeira">Caldeira</option></select></div>
-
-      <div id="p-classe-wrap" style="margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg2)">
-        <div class="text-xs mb-8" style="font-weight:600">💧 Classe do Fluido (NR-13, 13.5.1.1.1) — define a Categoria automaticamente</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-          <div id="p-classe-A" onclick="pSelecionarClasseFluido('A')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center">
-            <div style="font-size:12px;font-weight:700;color:var(--red)">CLASSE A</div>
-            <div style="font-size:9.5px;color:var(--text3)">Inflamável/tóxico</div>
-          </div>
-          <div id="p-classe-B" onclick="pSelecionarClasseFluido('B')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center">
-            <div style="font-size:12px;font-weight:700;color:var(--orange)">CLASSE B</div>
-            <div style="font-size:9.5px;color:var(--text3)">Vapor/ar/não tóxico</div>
-          </div>
-          <div id="p-classe-C" onclick="pSelecionarClasseFluido('C')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center">
-            <div style="font-size:12px;font-weight:700;color:var(--green)">CLASSE C</div>
-            <div style="font-size:9.5px;color:var(--text3)">Não perigoso</div>
-          </div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;margin-bottom:10px">
-          <div class="fg"><label class="fl" style="font-size:9.5px">Volume (m³)</label><input class="fi" id="p-vol" type="number" step="0.01" placeholder="Ex: 2.5" oninput="pCalcGrupoPotencial()"></div>
-          <div class="fg"><label class="fl" style="font-size:9.5px">PMTA (kgf/cm²)</label><input class="fi" id="p-pmta" type="number" step="0.1" placeholder="Ex: 15" oninput="pCalcGrupoPotencial()"></div>
-          <div class="fg"><label class="fl" style="font-size:9.5px">PV (m³·kgf/cm²)</label><input class="fi" id="p-pv" readonly style="background:var(--bg3);font-weight:700" placeholder="—"></div>
-        </div>
-        <div id="p-cat-auto-res" style="display:none;padding:8px 12px;border-radius:var(--r);background:var(--blue-dim);border:1px solid rgba(88,166,255,.3);font-size:11.5px;font-weight:600;color:var(--blue)">
-          🎯 <span id="p-cat-auto-txt">—</span>
-        </div>
-      </div>
-
-      <div class="fg mb-12"><label class="fl">Categoria <span class="text-xs" style="font-weight:400;color:var(--text3)" id="p-cat-origem"></span></label><select class="fs" id="p-cat" onchange="document.getElementById('p-cat-origem').textContent='';calcPrazo()"><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option></select></div>
+      <div class="fg mb-12"><label class="fl">Categoria</label><select class="fs" id="p-cat" onchange="calcPrazo()"><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option></select></div>
       <div class="fg mb-12"><label class="fl">Possui SPIE?</label><select class="fs" id="p-spie" onchange="calcPrazo()"><option value="0">Não</option><option value="1">Sim</option></select></div>
       <div class="fg mb-12"><label class="fl">Última Inspeção Externa</label><input type="date" class="fi" id="p-ext" onchange="calcPrazo()"></div>
       <div class="fg mb-12" id="p-int-wrap"><label class="fl">Última Inspeção Interna</label><input type="date" class="fi" id="p-int" onchange="calcPrazo()"></div>
@@ -556,11 +528,16 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
     </div></div>
     <div>
       <div class="card mb-16"><div class="card-hdr"><span class="card-title">Próximas Inspeções</span></div><div class="card-body" id="prazo-res"><div class="text-xs">Preencha os dados.</div></div></div>
-      <div class="card"><div class="card-hdr"><span class="card-title">Tabela NR-13 — Vasos</span></div><div class="card-body-0">
-        <table><thead><tr><th>Cat.</th><th>Ext s/SPIE</th><th>Ext c/SPIE</th><th>Int.</th><th>Ex.Int.</th></tr></thead><tbody>
-          <tr><td>I</td><td>1a</td><td>2a</td><td>3a</td><td>12a</td></tr><tr><td>II</td><td>2a</td><td>4a</td><td>4a</td><td>12a</td></tr>
-          <tr><td>III</td><td>3a</td><td>6a</td><td>6a</td><td>12a</td></tr><tr><td>IV</td><td>4a</td><td>8a</td><td>8a</td><td>12a</td></tr>
-          <tr><td>V</td><td>5a</td><td>10a</td><td>10a</td><td>20a</td></tr>
+      <div class="card"><div class="card-hdr"><span class="card-title">Tabela 2 NR-13 — Vasos (item 13.5.4.5)</span></div><div class="card-body-0">
+        <table><thead><tr><th>Cat.</th><th>Ext s/SPIE</th><th>Int s/SPIE</th><th>Ext c/SPIE</th><th>Int c/SPIE</th></tr></thead><tbody>
+          <tr><td>I</td><td>1a</td><td>3a</td><td>3a</td><td>6a</td></tr><tr><td>II</td><td>2a</td><td>4a</td><td>4a</td><td>8a</td></tr>
+          <tr><td>III</td><td>3a</td><td>6a</td><td>5a</td><td>10a</td></tr><tr><td>IV</td><td>4a</td><td>8a</td><td>6a</td><td>12a</td></tr>
+          <tr><td>V</td><td>5a</td><td>10a</td><td>7a</td><td>a critério</td></tr>
+        </tbody></table>
+      </div></div>
+      <div class="card mt-16"><div class="card-hdr"><span class="card-title">Caldeiras — item 13.4.4.4/13.4.4.5</span></div><div class="card-body-0">
+        <table><thead><tr><th>Cat.</th><th>Sem SPIE</th><th>Com SPIE</th></tr></thead><tbody>
+          <tr><td>A</td><td>12 meses</td><td>30 meses</td></tr><tr><td>B</td><td>12 meses</td><td>24 meses</td></tr>
         </tbody></table>
       </div></div>
     </div>
@@ -1035,31 +1012,29 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
           </div>
           <div class="sec-card-body">
             <p class="text-sm mb-12" style="color:var(--text2)">Selecione a classe do fluido contido no vaso conforme NR-13, item 13.5.1.1.1. A classe influencia diretamente a categoria do vaso.</p>
-            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;margin-bottom:14px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px">
               <div id="fl-classe-A" onclick="selecionarClasseFluido('A')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:12px;background:var(--bg2);transition:all .15s">
                 <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:6px">CLASSE A</div>
                 <div style="font-size:11px;color:var(--text2);line-height:1.6">
-                  <strong>Fluidos inflamáveis ou combustíveis</strong> acima da temperatura de fulgor, ou fluidos que possam causar danos severos à saúde em caso de vazamentos.<br><br>
-                  Exemplos: GLP, nafta, gasolina, diesel, solventes, produtos criogênicos, gases tóxicos.
+                  <strong>I</strong> fluidos inflamáveis; <strong>II</strong> combustíveis com temperatura ≥ 200°C; <strong>III</strong> tóxicos com limite de tolerância ≤ 20 ppm; <strong>IV</strong> hidrogênio; <strong>V</strong> acetileno.
                 </div>
               </div>
               <div id="fl-classe-B" onclick="selecionarClasseFluido('B')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:12px;background:var(--bg2);transition:all .15s">
                 <div style="font-size:13px;font-weight:700;color:var(--orange);margin-bottom:6px">CLASSE B</div>
                 <div style="font-size:11px;color:var(--text2);line-height:1.6">
-                  <strong>Fluidos inflamáveis ou combustíveis</strong> abaixo da temperatura de fulgor, ou vapor d'água, ar comprimido, gases não tóxicos e não inflamáveis acima de 50°C, fluidos não tóxicos e moderadamente perigosos.<br><br>
-                  Exemplos: vapor, ar comprimido, nitrogênio, CO₂.
+                  <strong>I</strong> fluidos combustíveis com temperatura &lt; 200°C; <strong>II</strong> fluidos tóxicos com limite de tolerância &gt; 20 ppm.
                 </div>
               </div>
               <div id="fl-classe-C" onclick="selecionarClasseFluido('C')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:12px;background:var(--bg2);transition:all .15s">
                 <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px">CLASSE C</div>
                 <div style="font-size:11px;color:var(--text2);line-height:1.6">
-                  <strong>Vapor de água, gases asfixiantes simples ou ar comprimido</strong>.
+                  <strong>I</strong> vapor de água; <strong>II</strong> gases asfixiantes simples; <strong>III</strong> ar comprimido.
                 </div>
               </div>
               <div id="fl-classe-D" onclick="selecionarClasseFluido('D')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:12px;background:var(--bg2);transition:all .15s">
                 <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:6px">CLASSE D</div>
                 <div style="font-size:11px;color:var(--text2);line-height:1.6">
-                  <strong>Outros fluidos</strong> não enquadrados nas classes anteriores.
+                  <strong>I</strong> outros fluidos não enquadrados nas classes A, B ou C.
                 </div>
               </div>
             </div>
@@ -1069,7 +1044,7 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
             <!-- Nota de rodapé 13.5.1.1.2 -->
             <div style="margin-top:14px;padding:10px 14px;border-radius:var(--r);background:var(--yellow-dim);border-left:3px solid var(--yellow);font-size:11px;color:var(--text2);line-height:1.7">
               <strong style="color:var(--yellow)">📌 NR-13, item 13.5.1.1.2</strong><br>
-              Para os fins desta NR, considera-se fluido perigoso: os inflamáveis e combustíveis conforme definidos na norma NBR 7505; os que possam causar danos severos à saúde em caso de vazamentos, tais como gases e vapores tóxicos, corrosivos, asfixiantes e similares; os criogênicos; e os que reagindo com a água possam originar reações violentas com liberação de calor ou formação de produtos perigosos.
+              Quando se tratar de mistura, deve ser considerado, para fins de classificação, o fluido que apresentar maior risco aos trabalhadores e às instalações, considerando-se sua toxicidade, inflamabilidade e concentração.
             </div>
           </div>
         </div>
@@ -1078,46 +1053,46 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
         <div class="sec-card mb-14">
           <div class="sec-card-hdr">⚠ Grupo Potencial de Risco — NR-13, item 13.5.1.1.3</div>
           <div class="sec-card-body">
-            <p class="text-sm mb-10" style="color:var(--text2)">Calcule o potencial de risco do vaso multiplicando o volume (m³) pela pressão máxima de trabalho (kgf/cm²), conforme NR-13.</p>
+            <p class="text-sm mb-10" style="color:var(--text2)">Calcule o potencial de risco do vaso multiplicando o volume (m³) pela pressão máxima de operação em módulo (MPa), conforme NR-13, item 13.5.1.1.3.</p>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:14px">
               <div class="fg">
                 <label class="fl">Volume (m³)</label>
                 <input class="fi" id="nr13-vol" type="number" step="0.01" placeholder="Ex: 2.5" oninput="calcGrupoPotencial()">
               </div>
               <div class="fg">
-                <label class="fl">PMTA (kgf/cm²)</label>
-                <input class="fi" id="nr13-pmta" type="number" step="0.1" placeholder="Ex: 15" oninput="calcGrupoPotencial()">
+                <label class="fl">Pressão Máx. de Operação (MPa)</label>
+                <input class="fi" id="nr13-pmta" type="number" step="0.01" placeholder="Ex: 1.5" oninput="calcGrupoPotencial()">
               </div>
               <div class="fg">
-                <label class="fl">Resultado PV (m³ × kgf/cm²)</label>
+                <label class="fl">Resultado P.V (MPa × m³)</label>
                 <input class="fi" id="nr13-pv" readonly style="background:var(--bg3);font-weight:700" placeholder="—">
               </div>
               <button class="btn btn-primary" onclick="calcGrupoPotencial()">Calcular</button>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:10px;margin-bottom:12px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px">
               <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-1">
                 <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px">GRUPO 1</div>
-                <div style="font-size:10.5px;color:var(--text2)">PV ≥ 100</div>
+                <div style="font-size:10.5px;color:var(--text2)">P.V &gt; 100</div>
               </div>
               <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-2">
                 <div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:4px">GRUPO 2</div>
-                <div style="font-size:10.5px;color:var(--text2)">30 ≤ PV &lt; 100</div>
+                <div style="font-size:10.5px;color:var(--text2)">30 &lt; P.V ≤ 100</div>
               </div>
               <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-3">
                 <div style="font-size:12px;font-weight:700;color:var(--yellow);margin-bottom:4px">GRUPO 3</div>
-                <div style="font-size:10.5px;color:var(--text2)">2,5 ≤ PV &lt; 30</div>
+                <div style="font-size:10.5px;color:var(--text2)">2,5 &lt; P.V ≤ 30</div>
               </div>
               <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-4">
                 <div style="font-size:12px;font-weight:700;color:var(--blue);margin-bottom:4px">GRUPO 4</div>
-                <div style="font-size:10.5px;color:var(--text2)">1 ≤ PV &lt; 2,5</div>
+                <div style="font-size:10.5px;color:var(--text2)">1 &lt; P.V ≤ 2,5</div>
               </div>
               <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-5">
                 <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:4px">GRUPO 5</div>
-                <div style="font-size:10.5px;color:var(--text2)">PV &lt; 1</div>
+                <div style="font-size:10.5px;color:var(--text2)">P.V ≤ 1</div>
               </div>
             </div>
             <div id="nr13-grupo-sel" style="display:none;padding:10px 14px;border-radius:var(--r);background:var(--blue-dim);border:1px solid rgba(88,166,255,.3);font-size:12px;font-weight:600;color:var(--blue)">
-              🎯 Grupo potencial de risco: <span id="nr13-grupo-nome">—</span> &nbsp;|&nbsp; PV = <span id="nr13-pv-res">—</span> m³·kgf/cm²
+              🎯 Grupo potencial de risco: <span id="nr13-grupo-nome">—</span> &nbsp;|&nbsp; P.V = <span id="nr13-pv-res">—</span> MPa·m³
             </div>
             <div style="margin-top:12px;padding:10px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--border)">
               <button class="btn btn-sm btn-primary" onclick="aplicarGrupoCategoria()">✅ Usar Grupo + Classe para definir Categoria</button>
@@ -1361,6 +1336,21 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function fmtDate(s){if(!s)return'—';try{const[y,m,d]=s.split('-');return`${d}/${m}/${y}`}catch{return s}}
 function addY(s,y){if(!s)return'';const d=new Date(s+'T00:00:00');d.setFullYear(d.getFullYear()+y);return d.toISOString().split('T')[0]}
 function addM(s,m){if(!s)return'';const d=new Date(s+'T00:00:00');d.setMonth(d.getMonth()+m);return d.toISOString().split('T')[0]}
+
+// ─── Prazos reais NR-13 — Tabela 2 (vasos, item 13.5.4.5) e item 13.4.4.4/13.4.4.5 (caldeiras) ───
+const NR13_PRAZO_VASO_EXT={I:{semSPIE:1,comSPIE:3},II:{semSPIE:2,comSPIE:4},III:{semSPIE:3,comSPIE:5},IV:{semSPIE:4,comSPIE:6},V:{semSPIE:5,comSPIE:7}};
+const NR13_PRAZO_VASO_INT={I:{semSPIE:3,comSPIE:6},II:{semSPIE:4,comSPIE:8},III:{semSPIE:6,comSPIE:10},IV:{semSPIE:8,comSPIE:12},V:{semSPIE:10,comSPIE:null}}; // Cat.V com SPIE: "a critério" (Tabela 2) — sem prazo máximo fixado
+const NR13_PRAZO_CALDEIRA_MESES={A:{semSPIE:12,comSPIE:30},B:{semSPIE:12,comSPIE:24}}; // 13.4.4.4/13.4.4.5 (valores-base; casos especiais: 24m Cat.A c/ teste anual de válvulas, 48m Cat.A c/SIS Anexo IV)
+function nr13ProximaInspecao(cat,spie,dataBase){
+  if(!dataBase)return'';
+  if(cat==='A'||cat==='B'){
+    const meses=NR13_PRAZO_CALDEIRA_MESES[cat][spie?'comSPIE':'semSPIE'];
+    return addM(dataBase,meses);
+  }
+  const tab=NR13_PRAZO_VASO_INT[cat]||NR13_PRAZO_VASO_INT.I;
+  const anos=spie?(tab.comSPIE??tab.semSPIE):tab.semSPIE;
+  return addY(dataBase,anos);
+}
 function diffDias(s){if(!s)return null;const h=new Date();h.setHours(0,0,0,0);return Math.ceil((new Date(s+'T00:00:00')-h)/86400000)}
 function vencCls(s){const d=diffDias(s);if(d===null)return'';if(d<0)return'text-red bold';if(d<=30)return'text-yellow';return'text-green'}
 function laudoIdGen(){const n=DB.laudos.length+1;return'LAU-'+new Date().getFullYear()+'-'+String(n).padStart(3,'0')}
@@ -1550,18 +1540,17 @@ function filtrarLaudoNorma(v){fNorma=v;filtrarLaudos()}
 
 // ─── VER LAUDO ───────────────────────────────────────────
 let laudoVerandoId=null;
-async function verLaudo(id){
+function verLaudo(id){
   const l=DB.laudos.find(x=>x.id===id);if(!l)return;
   laudoVerandoId=id;
   document.getElementById('ver-title').textContent=`Laudo ${l.id}`;
   const nrCls=(l.norma||'').toLowerCase().replace('-','');
   const ncItems=(l.checklist||[]).filter(c=>c.resp==='NC');
 
-  const fotosLaudo=(l.fotos&&l.fotos.length)?l.fotos:(l.fotosDriveId?await obterFotosDoLaudo(l):[]);
   let fotosHtml='';
-  if(fotosLaudo&&fotosLaudo.length){
-    fotosHtml=`<div class="mb-12"><div class="text-xs mb-8" style="font-weight:600">📷 Registro Fotográfico (${fotosLaudo.length} fotos)</div><div class="photo-grid">`;
-    fotosLaudo.forEach(f=>{fotosHtml+=`<div class="photo-thumb"><img src="${f.data}" alt="${f.legenda||''}"><div class="ph-cap">${f.legenda||''}</div></div>`});
+  if(l.fotos&&l.fotos.length){
+    fotosHtml=`<div class="mb-12"><div class="text-xs mb-8" style="font-weight:600">📷 Registro Fotográfico (${l.fotos.length} fotos)</div><div class="photo-grid">`;
+    l.fotos.forEach(f=>{fotosHtml+=`<div class="photo-thumb"><img src="${f.data}" alt="${f.legenda||''}"><div class="ph-cap">${f.legenda||''}</div></div>`});
     fotosHtml+='</div></div>';
   }
 
@@ -1623,17 +1612,12 @@ function editarLaudoVer(){
   closeModal('modal-ver');
   editarLaudo(laudoVerandoId);
 }
-async function imprimirLaudo(){
+function imprimirLaudo(){
   if(!laudoVerandoId)return;
   const l=DB.laudos.find(x=>x.id===laudoVerandoId);
   if(!l)return;
   const win=window.open('','_blank');
-  if(l.fotosDriveId&&(!l.fotos||!l.fotos.length)){
-    win.document.write('<p style="font-family:sans-serif;padding:24px;color:#555">Carregando fotos do Google Drive...</p>');
-  }
-  const fotos=(l.fotos&&l.fotos.length)?l.fotos:(l.fotosDriveId?await obterFotosDoLaudo(l):[]);
-  win.document.open();
-  win.document.write(gerarImpressao({...l,fotos},DB.cfg));
+  win.document.write(gerarImpressao(l,DB.cfg));
   win.document.close();
   win.focus();
   setTimeout(()=>win.print(),600);
@@ -1698,7 +1682,7 @@ function gerarImpressao(l,cfg){
         <table style="width:160px"><thead><tr><th style="width:50px">Ponto</th><th>Esp. (mm)</th></tr></thead><tbody>${tabelaRows}</tbody></table>
       </div>
     </div>
-    ${l.nr13ClasseFluido?`<div style="margin-top:10px;padding:8px;background:#f0f4ff;border-left:3px solid #3b82f6;font-size:10px"><strong>Classe do Fluido:</strong> Classe ${l.nr13ClasseFluido} &nbsp;|&nbsp; <strong>Grupo Potencial de Risco:</strong> Grupo ${l.nr13Grupo||'—'} &nbsp;|&nbsp; <strong>PV:</strong> ${l.nr13Vol&&l.nr13Pmta?(parseFloat(l.nr13Vol)*parseFloat(l.nr13Pmta)).toFixed(2)+' m³·kgf/cm²':'—'}</div>`:''}
+    ${l.nr13ClasseFluido?`<div style="margin-top:10px;padding:8px;background:#f0f4ff;border-left:3px solid #3b82f6;font-size:10px"><strong>Classe do Fluido:</strong> Classe ${l.nr13ClasseFluido} &nbsp;|&nbsp; <strong>Grupo Potencial de Risco:</strong> Grupo ${l.nr13Grupo||'—'} &nbsp;|&nbsp; <strong>PV:</strong> ${l.nr13Vol&&l.nr13Pmta?(parseFloat(l.nr13Vol)*parseFloat(l.nr13Pmta)).toFixed(2)+' MPa·m³':'—'}</div>`:''}
     </div>`;
   }
 
@@ -1781,6 +1765,7 @@ ${l.artNum?`<h2>8. ART</h2><div class="box">ART Nº ${l.artNum} — Emitida em $
     <div>Adamantina / SP</div>
     <div style="margin-top:3px"><a href="mailto:junamar@junamar.com" style="color:#1a6fc4;text-decoration:none">junamar@junamar.com</a></div>
     <div><a href="http://www.junamar.com" style="color:#1a6fc4;text-decoration:none">www.junamar.com</a></div>
+    <div style="margin-top:5px;font-size:8.5px;color:#aaa">Gerado por LaudosPRO v9 · ${new Date().toLocaleString('pt-BR')}</div>
     ${l.validade?`<div style="margin-top:3px;font-weight:700;color:#222;font-size:10px">Validade: ${l.validade}</div>`:''}
   </div>
 </div>
@@ -2031,85 +2016,6 @@ function atualizarStatusGDrive(){
   const el=document.getElementById('gdrive-status');if(el)el.textContent=texto;
   const q=document.getElementById('gdrive-quick-status');
   if(q)q.textContent=last?`✓ ${new Date(last).toLocaleDateString('pt-BR')}`:'Google Drive';
-  const tb=document.getElementById('topbar-gdrive-btn');
-  if(tb){
-    tb.textContent=conectado?'☁️✓ Salvo na Nuvem':'☁️ Salvar na Nuvem';
-    tb.title=last?`Último envio ao Drive: ${new Date(last).toLocaleString('pt-BR')}`:'Salvar backup no Google Drive';
-  }
-}
-
-// ─── FOTOS DE LAUDOS NO GOOGLE DRIVE (evita limite de ~5MB do localStorage) ──
-// Quando não há espaço local suficiente para salvar um laudo com fotos, elas
-// são enviadas automaticamente ao Google Drive (um arquivo JSON por laudo) e
-// apenas uma referência (fotosDriveId) fica salva localmente. As fotos são
-// buscadas do Drive sob demanda ao visualizar, editar ou imprimir o laudo.
-window._fotosDriveCache=window._fotosDriveCache||{};
-
-async function _gdriveGarantirConectado(){
-  if(gdriveAccessToken)return true;
-  if(!_gdriveClientId())return false;
-  return new Promise(resolve=>{
-    conectarGoogleDrive(()=>resolve(!!gdriveAccessToken));
-    setTimeout(()=>resolve(!!gdriveAccessToken),10000);
-  });
-}
-
-async function gdriveSalvarFotosLaudo(laudoId,fotos,fileIdExistente){
-  const ok=await _gdriveGarantirConectado();
-  if(!ok)throw new Error('Google Drive não conectado');
-  const nomeArquivo=`laudospro-fotos-${laudoId}.json`;
-  const blob=new Blob([JSON.stringify({laudoId,fotos,dt:new Date().toISOString()})],{type:'application/json'});
-  const form=new FormData();
-  form.append('metadata',new Blob([JSON.stringify({name:nomeArquivo,mimeType:'application/json'})],{type:'application/json'}));
-  form.append('file',blob);
-  let url,method;
-  if(fileIdExistente){url=`https://www.googleapis.com/upload/drive/v3/files/${fileIdExistente}?uploadType=multipart`;method='PATCH';}
-  else{url='https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';method='POST';}
-  let res=await fetch(url,{method,headers:{Authorization:`Bearer ${gdriveAccessToken}`},body:form});
-  if(res.status===401){
-    gdriveAccessToken=null;
-    const ok2=await _gdriveGarantirConectado();
-    if(!ok2)throw new Error('Falha de autenticação com o Google');
-    return gdriveSalvarFotosLaudo(laudoId,fotos,fileIdExistente);
-  }
-  if(res.status===404&&fileIdExistente){
-    return gdriveSalvarFotosLaudo(laudoId,fotos,null);
-  }
-  if(!res.ok)throw new Error('HTTP '+res.status);
-  const data=await res.json();
-  window._fotosDriveCache[data.id]=fotos;
-  return data.id;
-}
-
-async function gdriveCarregarFotosLaudo(fileId){
-  const ok=await _gdriveGarantirConectado();
-  if(!ok)throw new Error('Google Drive não conectado');
-  const res=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,{headers:{Authorization:`Bearer ${gdriveAccessToken}`}});
-  if(res.status===401){
-    gdriveAccessToken=null;
-    const ok2=await _gdriveGarantirConectado();
-    if(!ok2)throw new Error('Falha de autenticação com o Google');
-    return gdriveCarregarFotosLaudo(fileId);
-  }
-  if(!res.ok)throw new Error('HTTP '+res.status);
-  const data=await res.json();
-  return data.fotos||[];
-}
-
-// Retorna as fotos do laudo (locais ou buscadas do Drive), com cache em memória.
-async function obterFotosDoLaudo(l){
-  if(l.fotos&&l.fotos.length)return l.fotos;
-  if(!l.fotosDriveId)return[];
-  if(window._fotosDriveCache[l.fotosDriveId])return window._fotosDriveCache[l.fotosDriveId];
-  try{
-    notif('Carregando fotos do Google Drive...','info');
-    const fotos=await gdriveCarregarFotosLaudo(l.fotosDriveId);
-    window._fotosDriveCache[l.fotosDriveId]=fotos;
-    return fotos;
-  }catch(e){
-    notif('Não foi possível carregar as fotos do Google Drive: '+e.message,'err');
-    return[];
-  }
 }
 
 // ════════════════════════════════════════
@@ -2228,7 +2134,7 @@ function salvarEquip(){
   const ultima=document.getElementById('eq-ultima').value;
   let proxima='';
   if(ultima){
-    if(norma==='NR-13'){const cat=document.getElementById('eq-cat13').value;const spie=document.getElementById('eq-spie').value==='1';const m={I:1,II:2,III:3,IV:4,V:5,A:1,B:1};proxima=addY(ultima,(m[cat]||1)*(spie?2:1));}
+    if(norma==='NR-13'){const cat=document.getElementById('eq-cat13').value;const spie=document.getElementById('eq-spie').value==='1';proxima=nr13ProximaInspecao(cat,spie,ultima);}
     else proxima=addY(ultima,1);
   }
   const isMovel=TIPOS_MOVEIS.includes(tipoSel)||tipoSel==='Outro NR-11';
@@ -2242,7 +2148,7 @@ function deletarEquip(id){if(!confirm('Excluir equipamento?'))return;DB.equips=D
 // ════════════════════════════════════════
 // ─── NOVO LAUDO ──────────────────────────────────────────
 // ════════════════════════════════════════
-let ldStep=1,ldFotos=[],ldCheckState={},ldEditId=null,ldARTPDFData=null,ldFotosDriveId=null,ldFotosCarregando=false;
+let ldStep=1,ldFotos=[],ldCheckState={},ldEditId=null,ldARTPDFData=null;
 
 const ITENS_BY_TIPO={
   'Caminhão Munck':['Pinhão do mastro (trincas/rachaduras)','Pinos das lanças (trincas/deformações)','Conexões hidráulicas (vazamentos)','Mangueiras (fissuras/inchaços)','Parafusos de fixação das sapatas (aperto)','Lança (empeno)','Lança (folga excessiva)','Moitão e trava de segurança do guincho','Manetes de comando (vazamento/operação)','Patolas/estabilizadores (funcionamento)','Tabela de içamento de carga (legível/acessível)','Indicador de carga na lança','Nível de óleo hidráulico','Bomba hidráulica (funcionamento/vazamento)','Cabo de aço do guincho (condições/fios rompidos)'],
@@ -2253,56 +2159,56 @@ const ITENS_BY_TIPO={
 
 const CHECKLISTS_NR={
   'NR-11':[
-    {cod:'NR-11.1.1',desc:'Placa de identificação com capacidade máxima de carga visível e legível'},
-    {cod:'NR-11.1.2',desc:'Cabos de aço sem fios rompidos acima do limite (>10% em um passo)'},
-    {cod:'NR-11.1.3',desc:'Correntes sem deformações, corrosão excessiva ou alongamento excessivo'},
-    {cod:'NR-11.1.4',desc:'Ganchos com trava de segurança funcional e sem deformações/trincas'},
-    {cod:'NR-11.1.5',desc:'Sistema de freio operacional — testado durante a inspeção'},
-    {cod:'NR-11.1.6',desc:'Dispositivos de fim de curso instalados e funcionando'},
-    {cod:'NR-11.2.1',desc:'Operador com certificado válido (empilhadeira/guindaste)'},
-    {cod:'NR-11.3.1',desc:'Sinalização sonora (buzina) funcional e audível'},
-    {cod:'NR-11.3.2',desc:'Sinalização visual (luzes) funcionando'},
-    {cod:'NR-11.4.1',desc:'Área de trabalho com delimitação e sinalização adequada'},
-    {cod:'NR-11.5.1',desc:'Registro de inspeção e manutenção preventiva atualizado'},
-    {cod:'NR-11.6.1',desc:'Acessórios de içamento em bom estado (cintas, manilhas)'},
-    {cod:'NR-11.7.1',desc:'Estrutura sem deformações, trincas ou corrosão avançada'},
-    {cod:'NR-11.8.1',desc:'Sistema hidráulico sem vazamentos, pressão dentro do especificado'},
+    {cod:'NR-11.1.3.2',desc:'Placa de identificação com capacidade máxima de carga visível e legível'},
+    {cod:'NR-11.1.3.1',desc:'Cabos de aço sem fios rompidos, inspecionados permanentemente'},
+    {cod:'NR-11.1.3.1',desc:'Correntes sem deformações, corrosão excessiva ou alongamento excessivo'},
+    {cod:'NR-11.1.3.1',desc:'Ganchos e roldanas com trava de segurança funcional e sem deformações/trincas'},
+    {cod:'NR-11.1.3',desc:'Sistema de freio e demais componentes operacionais testados durante a inspeção'},
+    {cod:'NR-11.1.3 / NR-12.5.1',desc:'Dispositivos de proteção/fim de curso instalados e funcionando'},
+    {cod:'NR-11.1.5 / 11.1.6',desc:'Operador habilitado, com treinamento específico e cartão de identificação'},
+    {cod:'NR-11.1.7',desc:'Sinalização sonora (buzina) funcional e audível'},
+    {cod:'Boa prática (não previsto expressamente na NR-11)',desc:'Sinalização visual (luzes) funcionando'},
+    {cod:'NR-11 Anexo I, 1.4.1',desc:'Área de trabalho com delimitação e sinalização adequada (chapas de rochas ornamentais)'},
+    {cod:'NR-11.1.8 / Anexo I, 1.3',desc:'Registro de inspeção e manutenção preventiva atualizado'},
+    {cod:'NR-11 Anexo I, 2.6.1.1',desc:'Acessórios de içamento em bom estado (cintas, manilhas, correntes)'},
+    {cod:'NR-11.1.3',desc:'Estrutura sem deformações, trincas ou corrosão avançada'},
+    {cod:'NR-12.7.2 (compl. NR-11.1.3)',desc:'Sistema hidráulico sem vazamentos, pressão dentro do especificado'},
   ],
   'NR-12':[
-    {cod:'NR-12.38',desc:'Proteções físicas (guardas) em todas as zonas de perigo',risco:'Aprisionamento'},
-    {cod:'NR-12.44',desc:'Parada de emergência acessível e funcional',risco:'Falta de controle'},
-    {cod:'NR-12.52',desc:'Dispositivo de retenção de partes em falha de energia',risco:'Queda de partes'},
-    {cod:'NR-12.56',desc:'Dispositivos de segurança (bimanual, cortina) testados',risco:'Acionamento inadvertido'},
-    {cod:'NR-12.73',desc:'Intertravamento em portas e tampas de acesso',risco:'Acesso indevido'},
-    {cod:'NR-12.110',desc:'Manual de instruções em português disponível',risco:'Operação inadequada'},
-    {cod:'NR-12.135',desc:'Sinalização de advertência nas zonas de risco',risco:'Desconhecimento do perigo'},
-    {cod:'NR-12.141',desc:'Iluminação adequada na área de operação',risco:'Visibilidade reduzida'},
-    {cod:'NR-12.160',desc:'Operadores com treinamento NR-12 documentado',risco:'Erro humano'},
-    {cod:'NR-12.176',desc:'Manutenção preventiva realizada e registrada',risco:'Falha súbita'},
-    {cod:'NR-12 Anx.I',desc:'Distâncias de segurança respeitadas (Anexo I)',risco:'Alcance à zona perigosa'},
-    {cod:'NR-12 Anx.VIII',desc:'Análise de risco (HRN) realizada e documentada',risco:'Risco não quantificado'},
-    {cod:'NR-12.3',desc:'Dispositivo LOTO para manutenção segura',risco:'Acionamento durante manutenção'},
+    {cod:'NR-12.5.1',desc:'Proteções físicas (guardas) em todas as zonas de perigo',risco:'Aprisionamento'},
+    {cod:'NR-12.6.2',desc:'Parada de emergência acessível e funcional',risco:'Falta de controle'},
+    {cod:'NR-12.11.3-e',desc:'Dispositivo de retenção de partes em falha de energia',risco:'Queda de partes'},
+    {cod:'NR-12.4.3 / 12.5.13',desc:'Dispositivos de segurança (bimanual, cortina de luz) testados',risco:'Acionamento inadvertido'},
+    {cod:'NR-12.5.7 / 12.5.8',desc:'Intertravamento em portas e tampas de acesso',risco:'Acesso indevido'},
+    {cod:'NR-12.13.1',desc:'Manual de instruções em português disponível',risco:'Operação inadequada'},
+    {cod:'NR-12.12.1',desc:'Sinalização de advertência nas zonas de risco',risco:'Desconhecimento do perigo'},
+    {cod:'NR-17 (compl. NR-12.9.1)',desc:'Iluminação adequada na área de operação',risco:'Visibilidade reduzida'},
+    {cod:'NR-12.16.2',desc:'Operadores com treinamento NR-12 documentado',risco:'Erro humano'},
+    {cod:'NR-12.11.1 / 12.11.2',desc:'Manutenção preventiva realizada e registrada',risco:'Falha súbita'},
+    {cod:'NR-12 Anexo I',desc:'Distâncias de segurança de detectores optoeletrônicos (cortina de luz) respeitadas',risco:'Alcance à zona perigosa'},
+    {cod:'NR-12.5.2-a / NR-01 (PGR)',desc:'Apreciação/análise de risco realizada e documentada',risco:'Risco não quantificado'},
+    {cod:'NR-12.11.3-b',desc:'Bloqueio e sinalização de energia (LOTO) para manutenção segura',risco:'Acionamento durante manutenção'},
   ],
   'NR-13':[
-    {cod:'NR-13.2.1',desc:'Prontuário completo, atualizado e disponível'},
-    {cod:'NR-13.3.1',desc:'Válvula de segurança calibrada com certificado válido'},
-    {cod:'NR-13.3.2',desc:'Manômetro calibrado, fundo de escala adequado'},
-    {cod:'NR-13.4.1',desc:'Placa de identificação com dados de projeto fixada'},
-    {cod:'NR-13.5.1',desc:'Dispositivo de alívio/segurança de pressão funcional'},
-    {cod:'NR-13.6.1',desc:'Controle de nível com indicador visual (caldeiras)'},
-    {cod:'NR-13.7.1',desc:'Purga acessível de forma segura com EPI adequado'},
-    {cod:'NR-13.8.1',desc:'Isolamento térmico em bom estado'},
-    {cod:'NR-13.9.1',desc:'Livro de Registro de Segurança preenchido'},
-    {cod:'NR-13.10.1',desc:'Laudo de inspeção anterior dentro da validade'},
-    {cod:'NR-13.11.1',desc:'Válvulas de bloqueio identificadas e operacionais'},
-    {cod:'NR-13.12.1',desc:'Área com sinalização e acesso restrito durante operação'},
-    {cod:'NR-13.13.1',desc:'Tubulações identificadas por cor e seta de fluxo (ABNT)'},
-    {cod:'NR-13.14.1',desc:'Responsáveis com treinamento específico para operação segura'},
+    {cod:'NR-13.4.1.5 / 13.5.1.5',desc:'Prontuário completo, atualizado e disponível'},
+    {cod:'NR-13.4.4.7 / 13.5.4.9',desc:'Válvula de segurança desmontada, inspecionada e testada dentro do prazo'},
+    {cod:'NR-13.4.1.2-b / 13.5.1.2-d',desc:'Manômetro/instrumento indicador de pressão instalado e funcional'},
+    {cod:'NR-13.4.1.3 / 13.5.1.3',desc:'Placa de identificação com dados de projeto fixada'},
+    {cod:'NR-13.4.1.2-a / 13.5.1.2-a',desc:'Dispositivo de alívio/segurança de pressão funcional'},
+    {cod:'NR-13.4.1.2-e',desc:'Controle de nível com sistema automático e intertravamento (caldeiras)'},
+    {cod:'NR-13.5.2.1',desc:'Drenos, respiros e bocas de visita acessados por meios seguros'},
+    {cod:'Boa prática (não previsto expressamente na NR-13)',desc:'Isolamento térmico em bom estado'},
+    {cod:'NR-13.4.1.8 / 13.5.1.7 / 13.7.1.3',desc:'Registro de segurança (livro/sistema) preenchido'},
+    {cod:'NR-13.4.4.4 / 13.5.4.5',desc:'Laudo/relatório de inspeção anterior dentro do prazo de validade'},
+    {cod:'NR-13.5.1.2-c',desc:'Dispositivo Contra Bloqueio Inadvertido — DCBI nas válvulas de segurança'},
+    {cod:'NR-13.4.2.3 / 13.4.2.4',desc:'Área com saídas sinalizadas e acesso restrito durante operação'},
+    {cod:'NR-13.6.2.7',desc:'Tubulações identificadas conforme padronização do estabelecimento'},
+    {cod:'NR-13 Anexo I / 13.4.3.4 / 13.5.3.2',desc:'Responsáveis com treinamento específico (operador de caldeira/unidade de processo)'},
   ],
 };
 
 function openNovoLaudo(cliId=null){
-  ldStep=1;ldFotos=[];ldCheckState={};ldEditId=null;ldARTPDFData=null;ldFotosDriveId=null;ldFotosCarregando=false;
+  ldStep=1;ldFotos=[];ldCheckState={};ldEditId=null;ldARTPDFData=null;
   window.ldItensState={};
   ['ld-id','ld-tag','ld-norma','ld-fab','ld-modelo','ld-cap','ld-serie','ld-km','ld-art','ld-numinsp','ld-consinit','ld-cond','ld-nc','ld-conc','ld-risco','ld-validade','ld-art-num','ld-art-val','ld-prof'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   document.getElementById('ld-data').value=new Date().toISOString().split('T')[0];
@@ -2325,10 +2231,10 @@ function openNovoLaudo(cliId=null){
 }
 function openNovoLaudoCliente(cliId){openNovoLaudo(cliId)}
 
-async function editarLaudo(id){
+function editarLaudo(id){
   const l=DB.laudos.find(x=>x.id===id);if(!l)return;
   ldStep=1;ldEditId=id;ldFotos=l.fotos?JSON.parse(JSON.stringify(l.fotos)):[];ldCheckState={};
-  ldARTPDFData=null;ldFotosDriveId=l.fotosDriveId||null;ldFotosCarregando=false;
+  ldARTPDFData=null;
   document.getElementById('mlaudo-title').textContent='Editar Laudo '+l.id;
   document.getElementById('ld-id').value=l.id;
   const sel=document.getElementById('ld-cli');
@@ -2392,21 +2298,6 @@ async function editarLaudo(id){
   }
   renderLaudoStep(1);
   openModal('modal-laudo');
-  // Se as fotos deste laudo foram salvas no Google Drive (por falta de espaço
-  // local), busca-as em segundo plano para permitir visualização/edição.
-  if(l.fotosDriveId&&!ldFotos.length){
-    ldFotosCarregando=true;
-    document.getElementById('photo-count').textContent='☁️ Carregando fotos do Google Drive...';
-    obterFotosDoLaudo(l).then(fotos=>{
-      if(ldEditId!==id)return;
-      ldFotos=fotos.map(f=>({...f}));
-      renderFotos();
-    }).finally(()=>{
-      if(ldEditId!==id)return;
-      ldFotosCarregando=false;
-      document.getElementById('photo-count').textContent=ldFotos.length?`${ldFotos.length} foto(s) adicionada(s)`:'Nenhuma foto adicionada';
-    });
-  }
 }
 
 function loadEquipsByCliente(){
@@ -2560,7 +2451,7 @@ function renderFotos(){
       <div class="ph-cap">${f.legenda||'Figura '+(i+1)+' — Clique para adicionar legenda'}</div>
     </div>`).join('');
 }
-function removerFoto(i){ldFotos.splice(i,1);if(!ldFotos.length)ldFotosDriveId=null;renderFotos()}
+function removerFoto(i){ldFotos.splice(i,1);renderFotos()}
 function editarLegenda(i){
   const leg=prompt('Legenda da foto (ex: Figura 2 – Pinhão do Mastro do Munck):',ldFotos[i].legenda||'Figura '+(i+1));
   if(leg!==null){ldFotos[i].legenda=leg;renderFotos()}
@@ -2764,10 +2655,9 @@ Escreva APENAS o texto da conclusão, sem título, sem tópicos, sem prefácio.`
 function usarConcIA(){const txt=document.getElementById('ia-conc-out').textContent;if(txt&&!txt.includes('⚠')&&!txt.includes('Clique')){document.getElementById('ld-conc').value=txt;notif('Texto inserido!','ok')}}
 function copiarIA(){const txt=document.getElementById('ia-rec-out').textContent;navigator.clipboard?.writeText(txt).then(()=>notif('Copiado!','ok'))}
 
-async function salvarLaudo(){
+function salvarLaudo(){
   const conc=document.getElementById('ld-conc').value.trim();
   if(!conc){notif('Adicione a conclusão do laudo.','err');return}
-  if(ldFotosCarregando){notif('Aguarde o carregamento das fotos do Google Drive antes de salvar.','err');return}
   const statusVal=document.getElementById('ld-status').value;
   const novo=_coletarDadosLaudo(statusVal);
   // Verifica espaço
@@ -2775,16 +2665,9 @@ async function salvarLaudo(){
     notif('Espaço de armazenamento insuficiente. Exporte o backup e limpe dados antigos.','err');return;
   }
   if(ldFotos.length>0&&!_verificarEspacoLocalStorage(novo)){
-    try{
-      notif('Espaço local insuficiente — enviando fotos ao Google Drive...','info');
-      const fileId=await gdriveSalvarFotosLaudo(novo.id,ldFotos,ldFotosDriveId);
-      novo.fotosDriveId=fileId;novo.fotos=[];ldFotosDriveId=fileId;
-      notif('Fotos salvas no Google Drive (armazenamento local insuficiente).','ok');
-    }catch(e){
-      const dica=_obterDicasCompressao();
-      if(!confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s) e não foi possível enviar ao Google Drive (${e.message}).\n\n${dica}\n\nDeseja salvar o laudo SEM as fotos?`)){return;}
-      novo.fotos=[];
-    }
+    const dica=_obterDicasCompressao();
+    if(!confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s).\n\n${dica}\n\nDeseja salvar o laudo SEM as fotos?`)){return;}
+    novo.fotos=[];
   }
   const eqId=document.getElementById('ld-eq').value;
   const e=DB.equips.find(x=>x.id===eqId);
@@ -2838,7 +2721,6 @@ function _coletarDadosLaudo(status){
     nc:document.getElementById('ld-nc').value,
     profissionalIdx:document.getElementById('ld-prof')?.value||'',
     fotos:ldFotos,
-    fotosDriveId:ldFotosDriveId||undefined,
     itens:itensArr,
     checklist:Object.values(ldCheckState),
     recomendacoes:document.getElementById('ia-rec-out')?.textContent.includes('Clique')?'':document.getElementById('ia-rec-out')?.textContent||'',
@@ -2875,11 +2757,10 @@ function _verificarEspacoLocalStorage(dados){
   }catch(e){return false;}
 }
 
-async function salvarRascunho(){
+function salvarRascunho(){
   const cliId=document.getElementById('ld-cli').value;
   const eqId=document.getElementById('ld-eq').value;
   if(!cliId||!eqId){notif('Selecione cliente e equipamento primeiro.','err');return;}
-  if(ldFotosCarregando){notif('Aguarde o carregamento das fotos do Google Drive antes de salvar.','err');return}
   const novo=_coletarDadosLaudo('Rascunho');
   // Verifica espaço sem fotos
   const semFotos={...novo,fotos:[]};
@@ -2889,19 +2770,12 @@ async function salvarRascunho(){
   }
   // Verifica com fotos
   if(ldFotos.length>0&&!_verificarEspacoLocalStorage(novo)){
-    try{
-      notif('Espaço local insuficiente — enviando fotos ao Google Drive...','info');
-      const fileId=await gdriveSalvarFotosLaudo(novo.id,ldFotos,ldFotosDriveId);
-      novo.fotosDriveId=fileId;novo.fotos=[];ldFotosDriveId=fileId;
-      notif('Rascunho salvo — fotos armazenadas no Google Drive (espaço local insuficiente).','ok');
-    }catch(e){
-      const dica=_obterDicasCompressao();
-      if(confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s) e não foi possível enviar ao Google Drive (${e.message}).\n\n${dica}\n\nDeseja salvar o rascunho SEM as fotos para não perder o conteúdo?`)){
-        novo.fotos=[];
-        notif('Rascunho salvo sem fotos (espaço insuficiente).','info');
-      } else {
-        return;
-      }
+    const dica=_obterDicasCompressao();
+    if(confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s).\n\n${dica}\n\nDeseja salvar o rascunho SEM as fotos para não perder o conteúdo?`)){
+      novo.fotos=[];
+      notif('Rascunho salvo sem fotos (espaço insuficiente).','info');
+    } else {
+      return;
     }
   }
   try{
@@ -2956,48 +2830,6 @@ function updateCatOpts(){
   const sel=document.getElementById('p-cat');
   sel.innerHTML=tipo==='caldeira'?'<option value="A">A</option><option value="B">B</option>':'<option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option>';
   document.getElementById('p-ei-wrap').style.display=tipo==='caldeira'?'none':'flex';
-  const cw=document.getElementById('p-classe-wrap');
-  if(cw)cw.style.display=tipo==='caldeira'?'none':'block';
-  const origem=document.getElementById('p-cat-origem');
-  if(origem)origem.textContent='';
-}
-
-// ─── Classe do Fluido + Grupo Potencial de Risco → Categoria automática ──
-window._pClasseFluido='';
-window._pGrupo='';
-function pSelecionarClasseFluido(cls){
-  window._pClasseFluido=cls;
-  ['A','B','C'].forEach(c=>{
-    const el=document.getElementById('p-classe-'+c);
-    if(el)el.style.borderColor='var(--border2)';
-  });
-  const cores={A:'var(--red)',B:'var(--orange)',C:'var(--green)'};
-  const sel=document.getElementById('p-classe-'+cls);
-  if(sel)sel.style.borderColor=cores[cls]||'var(--blue)';
-  pAplicarCategoriaAutomatica();
-}
-function pCalcGrupoPotencial(){
-  const vol=parseFloat(document.getElementById('p-vol')?.value||0);
-  const pmta=parseFloat(document.getElementById('p-pmta')?.value||0);
-  const pvEl=document.getElementById('p-pv');
-  if(!vol||!pmta){if(pvEl)pvEl.value='';window._pGrupo='';pAplicarCategoriaAutomatica();return;}
-  const pv=vol*pmta;
-  if(pvEl)pvEl.value=pv.toFixed(2);
-  window._pGrupo=pv<8?'1':pv<100?'2':'3';
-  pAplicarCategoriaAutomatica();
-}
-function pAplicarCategoriaAutomatica(){
-  const cls=window._pClasseFluido,grp=window._pGrupo;
-  const resBox=document.getElementById('p-cat-auto-res'),resTxt=document.getElementById('p-cat-auto-txt'),origem=document.getElementById('p-cat-origem');
-  if(!cls||!grp){if(resBox)resBox.style.display='none';return;}
-  // Tabela NR-13, item 13.5.1.1: Classe do Fluido × Grupo Potencial de Risco → Categoria do vaso
-  const tabela={'A1':'IV','A2':'III','A3':'III','B1':'III','B2':'II','B3':'II','C1':'I','C2':'I','C3':'II'};
-  const cat=tabela[cls+grp]||'II';
-  document.getElementById('p-cat').value=cat;
-  if(resBox)resBox.style.display='block';
-  if(resTxt)resTxt.textContent=`Categoria ${cat} — Classe ${cls} de fluido + Grupo ${grp} de potencial de risco (NR-13)`;
-  if(origem)origem.textContent='(definida automaticamente)';
-  calcPrazo();
 }
 function calcPrazo(){
   const tipo=document.getElementById('p-tipo').value,cat=document.getElementById('p-cat').value;
@@ -3008,17 +2840,20 @@ function calcPrazo(){
   const row=(label,date,base,info)=>{const vc=vencCls(date);const d=diffDias(date);const ds=d===null?'':d<0?` <span class="text-red">(VENCIDO há ${Math.abs(d)}d)</span>`:d<=30?` <span class="text-yellow">(${d}d)</span>`:'';return`<div style="padding:11px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--border);margin-bottom:8px"><div class="text-xs mb-4">${label}</div><div class="bold ${vc}" style="font-family:var(--mono)">${fmtDate(date)}${ds}</div><div class="text-xs mt-4">${info}</div></div>`};
   let html='';
   if(tipo==='vaso'){
-    const me={I:1,II:2,III:3,IV:4,V:5},mi={I:3,II:4,III:6,IV:8,V:10};
-    const a=me[cat]||1,ai=mi[cat]||3;
-    html+=row('🔵 Próxima Inspeção Externa',addY(ext,spie?a*2:a),ext,`${fmtDate(ext)} + ${spie?a*2:a} anos${spie?' (com SPIE)':''}`);
-    html+=row('🟡 Próxima Inspeção Interna',addY(int_,ai),int_,`${fmtDate(int_)} + ${ai} anos (Cat. ${cat})`);
-    html+=row('🔴 Próximo Exame de Integridade',addY(ei,cat==='V'?20:12),ei,`${fmtDate(ei)} + ${cat==='V'?20:12} anos`);
-    html+=`<div class="text-xs p-8" style="background:var(--bg2);border-radius:var(--r)">Vaso Cat. ${cat}${spie?' com SPIE':''} — Tabela 2 NR-13</div>`;
+    const ae=NR13_PRAZO_VASO_EXT[cat]||NR13_PRAZO_VASO_EXT.I,ai=NR13_PRAZO_VASO_INT[cat]||NR13_PRAZO_VASO_INT.I;
+    const a=spie?ae.comSPIE:ae.semSPIE;
+    const anosInt=spie?(ai.comSPIE??null):ai.semSPIE;
+    html+=row('🔵 Próxima Inspeção Externa',addY(ext,a),ext,`${fmtDate(ext)} + ${a} anos${spie?' (com SPIE)':''} — Tabela 2`);
+    if(anosInt!==null){
+      html+=row('🟡 Próxima Inspeção Interna',addY(int_,anosInt),int_,`${fmtDate(int_)} + ${anosInt} anos (Cat. ${cat}${spie?' c/SPIE':''})`);
+    } else {
+      html+=`<div style="padding:11px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--border);margin-bottom:8px"><div class="text-xs mb-4">🟡 Próxima Inspeção Interna</div><div class="bold" style="font-family:var(--mono)">A critério do PLH</div><div class="text-xs mt-4">Cat. V com SPIE — sem prazo máximo fixado (Tabela 2, NR-13)</div></div>`;
+    }
+    html+=`<div class="text-xs p-8" style="background:var(--bg2);border-radius:var(--r)">Vaso Cat. ${cat}${spie?' com SPIE':''} — Tabela 2, NR-13 item 13.5.4.5</div>`;
   } else {
-    const pm=12,im=spie?30:cat==='A'?24:12;
-    html+=row('🔵 Próxima Inspeção Externa',addM(ext,pm),ext,`${fmtDate(ext)} + 12 meses`);
-    html+=row('🟡 Próxima Inspeção Interna',addM(int_,im),int_,`${fmtDate(int_)} + ${im} meses${im===30?' (SPIE)':im===24?' (Cat.A+válvulas)':''}`);
-    html+=`<div class="text-xs p-8" style="background:var(--bg2);border-radius:var(--r)">Caldeira Cat. ${cat}${spie?' com SPIE':''} — NR-13</div>`;
+    const im=NR13_PRAZO_CALDEIRA_MESES[cat]?.[spie?'comSPIE':'semSPIE']||12;
+    html+=row('🔵 Próxima Inspeção Periódica',addM(ext,im),ext,`${fmtDate(ext)} + ${im} meses${spie?' (com SPIE)':''} — Cat. ${cat}`);
+    html+=`<div class="text-xs p-8" style="background:var(--bg2);border-radius:var(--r)">Caldeira Cat. ${cat}${spie?' com SPIE':''} — NR-13, item 13.4.4.4/13.4.4.5 (prazo-base; pode ser ampliado em casos especiais — Anexo IV)</div>`;
   }
   res.innerHTML=html;
 }
@@ -3363,20 +3198,16 @@ function baixarARTPDF(){
   a.click();
 }
 
-async function baixarLaudoPDF(){
+function baixarLaudoPDF(){
   if(!laudoVerandoId)return;
   const l=DB.laudos.find(x=>x.id===laudoVerandoId);if(!l)return;
-  const win=window.open('','_blank');
-  if(l.fotosDriveId&&(!l.fotos||!l.fotos.length)){
-    win.document.write('<p style="font-family:sans-serif;padding:24px;color:#555">Carregando fotos do Google Drive...</p>');
-  }
-  const fotos=(l.fotos&&l.fotos.length)?l.fotos:(l.fotosDriveId?await obterFotosDoLaudo(l):[]);
-  win.document.open();
-  win.document.write(gerarImpressao({...l,fotos},DB.cfg));
-  win.document.close();
-  win.focus();
-  notif('Use "Salvar como PDF" na janela de impressão para baixar o laudo em PDF.','ok');
-  setTimeout(()=>win.print(),600);
+  const html=gerarImpressao(l,DB.cfg);
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`Laudo-${l.id}-${l.tag||'equip'}.html`;a.click();
+  URL.revokeObjectURL(url);
+  notif('Laudo baixado! Abra o arquivo e imprima como PDF.','ok');
 }
 
 function usarRiscoIA(){
@@ -3545,8 +3376,7 @@ window.salvarEquip = function() {
     if (norma==='NR-13') {
       const cat=document.getElementById('eq-cat13').value;
       const spie=document.getElementById('eq-spie').value==='1';
-      const m={I:1,II:2,III:3,IV:4,V:5,A:1,B:1};
-      proxima = addY(ultima, (m[cat]||1)*(spie?2:1));
+      proxima = nr13ProximaInspecao(cat,spie,ultima);
     } else proxima = addY(ultima,1);
   }
   const isMovel = TIPOS_MOVEIS.includes(tipoSel)||tipoSel==='Outro NR-11';
@@ -3728,15 +3558,14 @@ function calcPrazoLaudo(){
   const row=(label,date,info)=>{const vc=vencCls(date);const d=diffDias(date);const ds=d===null?'':d<0?` <span class="text-red">(VENCIDO)</span>`:d<=30?` <span class="text-yellow">(${d}d)</span>`:'';return`<div style="padding:9px;background:var(--bg2);border-radius:var(--r);border:1px solid var(--border);margin-bottom:7px"><div class="text-xs mb-2">${label}</div><div class="bold ${vc}" style="font-size:13px;font-family:var(--mono)">${fmtDate(date)}${ds}</div><div class="text-xs mt-2">${info}</div></div>`;};
   let html='';
   if(tipo==='vaso'){
-    const me={I:1,II:2,III:3,IV:4,V:5},mi={I:3,II:4,III:6,IV:8,V:10};
-    const a=me[cat]||1,ai=mi[cat]||3;
-    html+=row('🔵 Próxima Insp. Externa',addY(ext,spie?a*2:a),`+${spie?a*2:a}a${spie?' c/SPIE':''}`);
-    html+=row('🟡 Próxima Insp. Interna',addY(int_,ai),`+${ai}a Cat.${cat}`);
-    if(ei)html+=row('🔴 Próx. Exame Integridade',addY(ei,cat==='V'?20:12),`+${cat==='V'?20:12}a`);
+    const ae=NR13_PRAZO_VASO_EXT[cat]||NR13_PRAZO_VASO_EXT.I,ai=NR13_PRAZO_VASO_INT[cat]||NR13_PRAZO_VASO_INT.I;
+    const a=spie?ae.comSPIE:ae.semSPIE;
+    const anosInt=spie?(ai.comSPIE??null):ai.semSPIE;
+    html+=row('🔵 Próxima Insp. Externa',addY(ext,a),`+${a}a${spie?' c/SPIE':''}`);
+    html+=anosInt!==null?row('🟡 Próxima Insp. Interna',addY(int_,anosInt),`+${anosInt}a Cat.${cat}${spie?' c/SPIE':''}`):row('🟡 Próxima Insp. Interna','','A critério do PLH (Cat.V c/SPIE)');
   }else{
-    const pm=12,im=spie?30:cat==='A'?24:12;
-    html+=row('🔵 Próxima Insp. Externa',addM(ext,pm),`+12 meses`);
-    html+=row('🟡 Próxima Insp. Interna',addM(int_,im),`+${im} meses`);
+    const im=NR13_PRAZO_CALDEIRA_MESES[cat]?.[spie?'comSPIE':'semSPIE']||12;
+    html+=row('🔵 Próxima Insp. Periódica (int.+ext.)',addM(ext,im),`+${im} meses Cat.${cat}${spie?' c/SPIE':''}`);
   }
   res.innerHTML=html||'<div class="text-xs">Preencha as datas.</div>';
 }
@@ -3745,8 +3574,7 @@ function aplicarPrazosLaudo(){
   const spie=document.getElementById('ld-p-spie')?.value==='1';
   const ext=document.getElementById('ld-p-ext')?.value;
   if(!ext){notif('Preencha a última inspeção externa.','err');return;}
-  const me={I:1,II:2,III:3,IV:4,V:5};const a=me[cat]||1;
-  const prox=tipo==='vaso'?addY(ext,spie?a*2:a):addM(ext,12);
+  const prox=nr13ProximaInspecao(cat,spie,ext);
   document.getElementById('ld-prox').value=prox;
   notif('Próxima inspeção aplicada!','ok');
 }
@@ -3814,7 +3642,7 @@ function selecionarClasseFluido(cls){
   const sel=document.getElementById('fl-classe-'+cls);
   if(sel){sel.style.borderColor=cores[cls]||'var(--blue)';sel.style.background='var(--bg2)';}
   const nomeSel=document.getElementById('fl-classe-nome');
-  if(nomeSel)nomeSel.textContent='Classe '+cls+({A:' — Inflamáveis, Tóxicos (<=20ppm), Hidrogênio, Acetileno',B:' — Combustíveis (T<=200°C), Tóxicos (>20ppm)',C:' — Vapor, Ar comprimido, Gases asfixiantes',D:' — Outros fluidos'}[cls]||'');
+  if(nomeSel)nomeSel.textContent='Classe '+cls+({A:' — inflamáveis, combustíveis ≥200°C, tóxicos ≤20ppm, hidrogênio ou acetileno',B:' — combustíveis <200°C ou tóxicos >20ppm',C:' — vapor de água, gases asfixiantes simples ou ar comprimido',D:' — demais fluidos não enquadrados nas classes A, B ou C'}[cls]||'');
   const box=document.getElementById('fl-classe-sel');
   if(box)box.style.display='block';
   calcGrupoPotencial();
@@ -3827,12 +3655,12 @@ function calcGrupoPotencial(){
   if(!vol||!pmta){if(pvEl)pvEl.value='';return;}
   const pv=vol*pmta;
   if(pvEl)pvEl.value=pv.toFixed(2);
-  // Determine group
+  // Determine group — NR-13, item 13.5.1.1.3 (P em MPa × V em m³)
   let grp='',cor='var(--blue)';
-  if(pv>=100){grp='1';cor='var(--red)'}
-  else if(pv>=30){grp='2';cor='var(--orange)'}
-  else if(pv>=2.5){grp='3';cor='var(--yellow)'}
-  else if(pv>=1){grp='4';cor='var(--blue)'}
+  if(pv>100){grp='1';cor='var(--red)'}
+  else if(pv>30){grp='2';cor='var(--orange)'}
+  else if(pv>2.5){grp='3';cor='var(--yellow)'}
+  else if(pv>1){grp='4';cor='var(--blue)'}
   else{grp='5';cor='var(--green)'}
   window._nr13Grupo=grp;
   // Highlight group
@@ -3845,7 +3673,7 @@ function calcGrupoPotencial(){
   const selBox=document.getElementById('nr13-grupo-sel');
   if(selBox)selBox.style.display='block';
   const grpNome=document.getElementById('nr13-grupo-nome');
-  if(grpNome)grpNome.textContent='Grupo '+grp+({1:' (PV ≥ 100)',2:' (30 ≤ PV < 100)',3:' (2,5 ≤ PV < 30)',4:' (1 ≤ PV < 2,5)',5:' (PV < 1)'}[grp]||'');
+  if(grpNome)grpNome.textContent='Grupo '+grp+({1:' (P.V > 100)',2:' (30 < P.V ≤ 100)',3:' (2,5 < P.V ≤ 30)',4:' (1 < P.V ≤ 2,5)',5:' (P.V ≤ 1)'}[grp]||'');
   const pvRes=document.getElementById('nr13-pv-res');
   if(pvRes)pvRes.textContent=pv.toFixed(2);
 }
@@ -3854,7 +3682,7 @@ function aplicarGrupoCategoria(){
   const cls=window._nr13ClasseFluido;
   const grp=window._nr13Grupo;
   if(!cls||!grp){notif('Defina a classe do fluido e calcule o grupo de risco primeiro.','err');return;}
-  // Tabela NR-13: Classe × Grupo → Categoria sugerida
+  // Tabela 1 da NR-13 (item 13.5.1.1): Classe × Grupo → Categoria
   const tabela={
     'A1':'I','A2':'I','A3':'II','A4':'III','A5':'III',
     'B1':'I','B2':'II','B3':'III','B4':'IV','B5':'IV',
@@ -4115,7 +3943,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('cnt-clientes').textContent=DB.clientes.length;
   document.getElementById('cnt-equipamentos').textContent=DB.equips.length;
   renderDashboard();calcHRN();updateCatOpts();renderCalibDash&&renderCalibDash();
-  atualizarStatusGDrive();
   if(!c.apikey)setTimeout(()=>notif('Configure sua chave gratuita do OpenRouter em Configurações para usar a IA.','info'),1500);
 });
 </script>
