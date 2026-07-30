@@ -1606,7 +1606,12 @@ async function verLaudo(id){
   laudoVerandoId=id;
   document.getElementById('ver-title').textContent=`Laudo ${l.id}`;
   const nrCls=(l.norma||'').toLowerCase().replace('-','');
-  const ncItems=(l.checklist||[]).filter(c=>c.resp==='NC');
+  const itensNormaAtualVer=CHECKLISTS_NR[l.norma]||[];
+  const checklistAtualizadoVer=(l.checklist||[]).map((c,i)=>{
+    const atual=itensNormaAtualVer[i];
+    return atual?{...atual,resp:c.resp,obs:c.obs}:c;
+  });
+  const ncItems=checklistAtualizadoVer.filter(c=>c.resp==='NC');
 
   const fotosLaudo=(l.fotos&&l.fotos.length)?l.fotos:(l.fotosDriveId?await obterFotosDoLaudo(l):[]);
   let fotosHtml='';
@@ -1649,7 +1654,7 @@ async function verLaudo(id){
     ${l.cond?`<div class="mb-12"><div class="text-xs mb-4">Condições Verificadas</div><div style="white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:var(--bg2);padding:10px;border-radius:var(--r)">${l.cond}</div></div>`:''}
     ${itensHtml}
     ${l.nc?`<div class="mb-12"><div class="text-xs mb-4" style="color:var(--red)">Não-Conformidades</div><div style="white-space:pre-wrap;font-size:12.5px;line-height:1.7;background:var(--red-dim);padding:12px;border-radius:var(--r);border-left:3px solid var(--red)">${l.nc}</div></div>`:''}
-    ${ncItems.length?`<div class="mb-12"><div class="text-xs mb-4" style="color:var(--red)">Itens Não-Conformes no Checklist (${ncItems.length})</div>${ncItems.map(c=>`<div style="padding:7px;background:var(--red-dim);border-radius:5px;border-left:3px solid var(--red);margin-bottom:5px;font-size:11.5px"><span style="font-family:var(--mono);color:var(--text3);font-size:10px">${c.cod}</span><br>${c.desc}</div>`).join('')}</div>`:''}
+    ${checklistAtualizadoVer.length?`<div class="mb-12"><div class="text-xs mb-6" style="font-weight:600">✅ Checklist ${l.norma||''} (${checklistAtualizadoVer.length} itens)</div>${checklistAtualizadoVer.map((c,i)=>{const cor=c.resp==='C'?'var(--green)':c.resp==='NC'?'var(--red)':'var(--text3)';const bg=c.resp==='C'?'var(--green-dim)':c.resp==='NC'?'var(--red-dim)':'var(--bg2)';const txt=c.resp==='C'?'CONFORME':c.resp==='NC'?'NÃO CONFORME':c.resp==='NA'?'N/A':'—';return`<div style="display:flex;gap:10px;align-items:flex-start;padding:7px;background:${bg};border-radius:5px;border-left:3px solid ${cor};margin-bottom:5px;font-size:11.5px"><span class="badge" style="flex-shrink:0;color:${cor};border-color:${cor}">${txt}</span><div><span style="font-family:var(--mono);color:var(--text3);font-size:10px">${c.cod}</span><br>${c.desc}${c.risco?`<br><span class="text-xs" style="color:var(--text3)">⚠ Risco: ${c.risco}</span>`:''}</div></div>`;}).join('')}</div>`:''}
     ${fotosHtml}
     ${l.recomendacoes?`<div class="mb-12"><div class="text-xs mb-4" style="color:var(--green)">Recomendações Técnicas</div><div style="white-space:pre-wrap;font-size:12.5px;line-height:1.8;background:var(--green-dim);padding:12px;border-radius:var(--r);border-left:3px solid var(--green)">${l.recomendacoes}</div></div>`:''}
     ${l.conc?`<div class="mb-12"><div class="text-xs mb-4">Conclusão Técnica</div><div style="white-space:pre-wrap;font-size:12.5px;line-height:1.8;background:var(--bg2);padding:12px;border-radius:var(--r)">${l.conc}</div></div>`:''}
@@ -1696,7 +1701,24 @@ function gerarImpressao(l,cfg){
   const engCrea=eng.crea||cfg.crea||'';
   const engEmail=eng.email||cfg.email||'';
   const engEsp=eng.especialidade||cfg.especialidade||'Engenheiro';
-  const ncs=(l.checklist||[]).filter(c=>c.resp==='NC');
+  // Resolve o checklist salvo contra a versão ATUAL da norma (CHECKLISTS_NR),
+  // por posição/índice — garante que a impressão sempre traga os itens/códigos
+  // vigentes da NR, mesmo em laudos antigos salvos antes de uma correção de norma.
+  const itensNormaAtual=CHECKLISTS_NR[l.norma]||[];
+  const checklistAtualizado=(l.checklist||[]).map((c,i)=>{
+    const atual=itensNormaAtual[i];
+    return atual?{...atual,resp:c.resp,obs:c.obs}:c;
+  });
+  const ncs=checklistAtualizado.filter(c=>c.resp==='NC');
+  let checklistHtml='';
+  if(checklistAtualizado.length){
+    const corResp={C:'green',NC:'red',NA:'#888'};
+    const txtResp={C:'CONFORME',NC:'NÃO CONFORME',NA:'N/A'};
+    checklistHtml=`<div class="section"><h2>Checklist ${l.norma||''} — Itens Inspecionados</h2>
+    <table><thead><tr><th style="width:22px">#</th><th style="width:150px">Código</th><th>Item</th><th style="width:80px">Resultado</th></tr></thead><tbody>
+    ${checklistAtualizado.map((c,i)=>`<tr><td>${i+1}</td><td style="font-family:monospace;font-size:9px">${c.cod||'—'}</td><td>${c.desc||'—'}${c.risco?`<br><span style="font-size:9px;color:#888">⚠ Risco: ${c.risco}</span>`:''}</td><td style="color:${corResp[c.resp]||'#888'};font-weight:700">${c.resp?txtResp[c.resp]:'—'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  }
   let fotosHtml='';
   if(l.fotos&&l.fotos.length){
     fotosHtml=`<div class="section"><h2>Registro Fotográfico</h2><div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px">`;
@@ -1806,8 +1828,9 @@ tbody td{padding:5px 8px;border:1px solid #ddd;vertical-align:top}
 ${l.consinit?`<h2>3. Considerações Iniciais</h2><div class="box">${l.consinit}</div>`:''}
 ${l.cond?`<h2>4. Condições Verificadas</h2><div class="box">${l.cond}</div>`:''}
 ${itensHtml}
+${checklistHtml}
 ${l.nc&&l.nc.trim()?`<h2>5. Não-Conformidades</h2><div class="nc-box">${l.nc.replace(/\n/g,'<br>')}</div>`:''}
-${ncs.length?`<h2>Itens Não-Conformes (Checklist)</h2>${ncs.map(c=>`<div class="nc-box"><strong>${c.cod}</strong><br>${c.desc}</div>`).join('')}`:''}
+${ncs.length?`<h2>Resumo — Itens Não-Conformes do Checklist</h2>${ncs.map(c=>`<div class="nc-box"><strong>${c.cod}</strong><br>${c.desc}</div>`).join('')}`:''}
 ${fotosHtml}
 ${calibHtml}
 ${espHtml}
@@ -2435,7 +2458,13 @@ async function editarLaudo(id){
   renderFotos();
   document.getElementById('photo-count').textContent=ldFotos.length?`${ldFotos.length} foto(s) adicionada(s)`:'Nenhuma foto adicionada';
   if(l.checklist&&l.checklist.length){
-    l.checklist.forEach((it,i)=>{ldCheckState[i]={...it}});
+    // Atualiza cod/desc/risco para a versão atual da norma (CHECKLISTS_NR),
+    // preservando apenas a resposta (C/NC/N/A) e observação já registradas.
+    const itensAtuais=CHECKLISTS_NR[l.norma]||[];
+    l.checklist.forEach((it,i)=>{
+      const atual=itensAtuais[i];
+      ldCheckState[i]=atual?{...atual,resp:it.resp,obs:it.obs}:{...it};
+    });
   }
   window.ldItensState={};
   if(l.itens&&l.itens.length){
