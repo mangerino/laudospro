@@ -367,6 +367,7 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
     <div class="topbar-actions">
       <div id="topbar-extra"></div>
       <div class="theme-btn" onclick="toggleTheme()" id="theme-btn" title="Alternar tema claro/escuro">🌙</div>
+      <button class="btn" onclick="salvarBackupNoDrive()" title="Salvar backup no Google Drive" id="topbar-gdrive-btn">☁️ Salvar na Nuvem</button>
       <button class="btn btn-primary" onclick="openNovoLaudo()">➕ Novo Laudo</button>
     </div>
   </div>
@@ -520,7 +521,38 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
     <div class="card"><div class="card-hdr"><span class="card-title">📅 Calculadora Prazos NR-13</span></div><div class="card-body">
       <div class="fg mb-12"><label class="fl">Tipo</label><select class="fs" id="p-tipo" onchange="updateCatOpts();calcPrazo()"><option value="vaso">Vaso de Pressão</option><option value="caldeira">Caldeira</option></select></div>
-      <div class="fg mb-12"><label class="fl">Categoria</label><select class="fs" id="p-cat" onchange="calcPrazo()"><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option></select></div>
+
+      <div id="p-classe-wrap" style="margin-bottom:14px;padding:12px;border:1px solid var(--border);border-radius:var(--r);background:var(--bg2)">
+        <div class="text-xs mb-8" style="font-weight:600">💧 Classe do Fluido (NR-13, 13.5.1.1.1) — define a Categoria automaticamente</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+          <div id="p-classe-A" onclick="pSelecionarClasseFluido('A')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center">
+            <div style="font-size:12px;font-weight:700;color:var(--red)">CLASSE A</div>
+            <div style="font-size:9.5px;color:var(--text3)">Inflamável/tóxico ≤20ppm</div>
+          </div>
+          <div id="p-classe-B" onclick="pSelecionarClasseFluido('B')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center">
+            <div style="font-size:12px;font-weight:700;color:var(--orange)">CLASSE B</div>
+            <div style="font-size:9.5px;color:var(--text3)">Combustível &lt;200°C/tóxico &gt;20ppm</div>
+          </div>
+          <div id="p-classe-C" onclick="pSelecionarClasseFluido('C')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center">
+            <div style="font-size:12px;font-weight:700;color:var(--green)">CLASSE C</div>
+            <div style="font-size:9.5px;color:var(--text3)">Vapor/ar comprimido</div>
+          </div>
+          <div id="p-classe-D" onclick="pSelecionarClasseFluido('D')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:8px;background:var(--bg);text-align:center">
+            <div style="font-size:12px;font-weight:700;color:var(--blue)">CLASSE D</div>
+            <div style="font-size:9.5px;color:var(--text3)">Outros fluidos</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;margin-bottom:10px">
+          <div class="fg"><label class="fl" style="font-size:9.5px">Volume (m³)</label><input class="fi" id="p-vol" type="number" step="0.01" placeholder="Ex: 2.5" oninput="pCalcGrupoPotencial()"></div>
+          <div class="fg"><label class="fl" style="font-size:9.5px">PMTA (kgf/cm²)</label><input class="fi" id="p-pmta" type="number" step="0.1" placeholder="Ex: 15" oninput="pCalcGrupoPotencial()"></div>
+          <div class="fg"><label class="fl" style="font-size:9.5px">P.V (MPa·m³)</label><input class="fi" id="p-pv" readonly style="background:var(--bg3);font-weight:700" placeholder="—"></div>
+        </div>
+        <div id="p-cat-auto-res" style="display:none;padding:8px 12px;border-radius:var(--r);background:var(--blue-dim);border:1px solid rgba(88,166,255,.3);font-size:11.5px;font-weight:600;color:var(--blue)">
+          🎯 <span id="p-cat-auto-txt">—</span>
+        </div>
+      </div>
+
+      <div class="fg mb-12"><label class="fl">Categoria <span class="text-xs" style="font-weight:400;color:var(--text3)" id="p-cat-origem"></span></label><select class="fs" id="p-cat" onchange="document.getElementById('p-cat-origem').textContent='';calcPrazo()"><option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option></select></div>
       <div class="fg mb-12"><label class="fl">Possui SPIE?</label><select class="fs" id="p-spie" onchange="calcPrazo()"><option value="0">Não</option><option value="1">Sim</option></select></div>
       <div class="fg mb-12"><label class="fl">Última Inspeção Externa</label><input type="date" class="fi" id="p-ext" onchange="calcPrazo()"></div>
       <div class="fg mb-12" id="p-int-wrap"><label class="fl">Última Inspeção Interna</label><input type="date" class="fi" id="p-int" onchange="calcPrazo()"></div>
@@ -859,8 +891,18 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
         <div class="fg2">
           <div class="fg"><label class="fl">Categoria NR-13</label><select class="fs" id="eq-cat13"><option value="">—</option><option value="A">Caldeira A</option><option value="B">Caldeira B</option><option value="I">Vaso Cat. I</option><option value="II">Vaso Cat. II</option><option value="III">Vaso Cat. III</option><option value="IV">Vaso Cat. IV</option><option value="V">Vaso Cat. V</option></select></div>
           <div class="fg"><label class="fl">Possui SPIE?</label><select class="fs" id="eq-spie"><option value="0">Não</option><option value="1">Sim</option></select></div>
+          <div class="fg"><label class="fl">Classe do Fluido</label>
+            <select class="fs" id="eq-classe-fluido" onchange="calcCategoriaEquip()">
+              <option value="">Selecionar...</option>
+              <option value="A">Classe A (Inflamáveis/Tóxicos)</option>
+              <option value="B">Classe B (Combustíveis/Vapor)</option>
+              <option value="C">Classe C (Vapor/Ar/Asfixiantes)</option>
+              <option value="D">Classe D (Outros)</option>
+            </select>
+          </div>
+          <div class="fg"><label class="fl">Volume (m³)</label><input class="fi" id="eq-volume" type="number" step="0.001" placeholder="Ex: 0.5" oninput="calcCategoriaEquip()"></div>
           <div class="fg"><label class="fl">Fluido de Processo</label><input class="fi" id="eq-fluido" placeholder="Vapor, ar comprimido..."></div>
-          <div class="fg"><label class="fl">Pressão Máx. Operação (kgf/cm²)</label><input class="fi" id="eq-pressao" type="number" placeholder="15"></div>
+          <div class="fg"><label class="fl">Pressão Máx. Operação (kgf/cm²)</label><input class="fi" id="eq-pressao" type="number" placeholder="15" oninput="calcCategoriaEquip()"></div>
           <div class="fg"><label class="fl">PMTA — Pressão Máx. de Trabalho Admissível</label><input class="fi" id="eq-pmta" placeholder="Ex: 15 kgf/cm² ou 14,7 bar"></div>
           <div class="fg"><label class="fl">Pressão Operacional</label><input class="fi" id="eq-pressao-op" placeholder="Ex: 12 kgf/cm² ou 11,8 bar"></div>
           <div class="fg"><label class="fl">Nº de Série do Equipamento</label><input class="fi" id="eq-nserie" placeholder="Ex: VP-2024-0001"></div>
@@ -1012,7 +1054,7 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
           </div>
           <div class="sec-card-body">
             <p class="text-sm mb-12" style="color:var(--text2)">Selecione a classe do fluido contido no vaso conforme NR-13, item 13.5.1.1.1. A classe influencia diretamente a categoria do vaso.</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:14px">
+            <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:10px;margin-bottom:14px">
               <div id="fl-classe-A" onclick="selecionarClasseFluido('A')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:12px;background:var(--bg2);transition:all .15s">
                 <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:6px">CLASSE A</div>
                 <div style="font-size:11px;color:var(--text2);line-height:1.6">
@@ -1034,7 +1076,7 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
               <div id="fl-classe-D" onclick="selecionarClasseFluido('D')" style="cursor:pointer;border:2px solid var(--border2);border-radius:var(--r);padding:12px;background:var(--bg2);transition:all .15s">
                 <div style="font-size:13px;font-weight:700;color:var(--blue);margin-bottom:6px">CLASSE D</div>
                 <div style="font-size:11px;color:var(--text2);line-height:1.6">
-                  <strong>I</strong> outros fluidos não enquadrados nas classes A, B ou C.
+                  <strong>Outros fluidos</strong> não enquadrados nas classes anteriores.
                 </div>
               </div>
             </div>
@@ -1053,23 +1095,23 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
         <div class="sec-card mb-14">
           <div class="sec-card-hdr">⚠ Grupo Potencial de Risco — NR-13, item 13.5.1.1.3</div>
           <div class="sec-card-body">
-            <p class="text-sm mb-10" style="color:var(--text2)">Calcule o potencial de risco do vaso multiplicando o volume (m³) pela pressão máxima de operação em módulo (MPa), conforme NR-13, item 13.5.1.1.3.</p>
+            <p class="text-sm mb-10" style="color:var(--text2)">Calcule o potencial de risco do vaso multiplicando o volume (m³) pela pressão máxima de trabalho (kgf/cm²), conforme NR-13.</p>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end;margin-bottom:14px">
               <div class="fg">
                 <label class="fl">Volume (m³)</label>
                 <input class="fi" id="nr13-vol" type="number" step="0.01" placeholder="Ex: 2.5" oninput="calcGrupoPotencial()">
               </div>
               <div class="fg">
-                <label class="fl">Pressão Máx. de Operação (MPa)</label>
-                <input class="fi" id="nr13-pmta" type="number" step="0.01" placeholder="Ex: 1.5" oninput="calcGrupoPotencial()">
+                <label class="fl">PMTA (kgf/cm²) <span style="font-weight:400;color:var(--text3)">— convertido p/ MPa no cálculo</span></label>
+                <input class="fi" id="nr13-pmta" type="number" step="0.1" placeholder="Ex: 15" oninput="calcGrupoPotencial()">
               </div>
               <div class="fg">
-                <label class="fl">Resultado P.V (MPa × m³)</label>
+                <label class="fl">Resultado P.V (MPa · m³)</label>
                 <input class="fi" id="nr13-pv" readonly style="background:var(--bg3);font-weight:700" placeholder="—">
               </div>
               <button class="btn btn-primary" onclick="calcGrupoPotencial()">Calcular</button>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="display:grid;grid-template-columns:repeat(5, 1fr);gap:10px;margin-bottom:12px">
               <div style="border:2px solid var(--border2);border-radius:var(--r);padding:10px" id="grp-1">
                 <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:4px">GRUPO 1</div>
                 <div style="font-size:10.5px;color:var(--text2)">P.V &gt; 100</div>
@@ -1337,6 +1379,10 @@ function fmtDate(s){if(!s)return'—';try{const[y,m,d]=s.split('-');return`${d}/
 function addY(s,y){if(!s)return'';const d=new Date(s+'T00:00:00');d.setFullYear(d.getFullYear()+y);return d.toISOString().split('T')[0]}
 function addM(s,m){if(!s)return'';const d=new Date(s+'T00:00:00');d.setMonth(d.getMonth()+m);return d.toISOString().split('T')[0]}
 
+// ─── NR-13: conversão de unidade de pressão para o cálculo de P.V (item 13.5.1.1.3 exige P em MPa) ───
+const KGF_CM2_TO_MPA=0.0980665; // 1 kgf/cm² = 0,0980665 MPa
+function kgfCm2ParaMPa(v){return (parseFloat(v)||0)*KGF_CM2_TO_MPA;}
+
 // ─── Prazos reais NR-13 — Tabela 2 (vasos, item 13.5.4.5) e item 13.4.4.4/13.4.4.5 (caldeiras) ───
 const NR13_PRAZO_VASO_EXT={I:{semSPIE:1,comSPIE:3},II:{semSPIE:2,comSPIE:4},III:{semSPIE:3,comSPIE:5},IV:{semSPIE:4,comSPIE:6},V:{semSPIE:5,comSPIE:7}};
 const NR13_PRAZO_VASO_INT={I:{semSPIE:3,comSPIE:6},II:{semSPIE:4,comSPIE:8},III:{semSPIE:6,comSPIE:10},IV:{semSPIE:8,comSPIE:12},V:{semSPIE:10,comSPIE:null}}; // Cat.V com SPIE: "a critério" (Tabela 2) — sem prazo máximo fixado
@@ -1350,6 +1396,21 @@ function nr13ProximaInspecao(cat,spie,dataBase){
   const tab=NR13_PRAZO_VASO_INT[cat]||NR13_PRAZO_VASO_INT.I;
   const anos=spie?(tab.comSPIE??tab.semSPIE):tab.semSPIE;
   return addY(dataBase,anos);
+}
+// Tabela 1 da NR-13 (item 13.5.1.1): Classe do Fluido × Grupo de Risco → Categoria do vaso
+const NR13_TABELA_CATEGORIA={
+  'A1':'I','A2':'I','A3':'II','A4':'III','A5':'III',
+  'B1':'I','B2':'II','B3':'III','B4':'IV','B5':'IV',
+  'C1':'I','C2':'II','C3':'III','C4':'IV','C5':'V',
+  'D1':'II','D2':'III','D3':'IV','D4':'V','D5':'V',
+};
+// Grupo de risco (13.5.1.1.3): P em MPa, V em m³ — pv já deve vir convertido para MPa·m³
+function nr13Grupo(pv){
+  if(pv>100)return'1';
+  if(pv>30)return'2';
+  if(pv>2.5)return'3';
+  if(pv>1)return'4';
+  return'5';
 }
 function diffDias(s){if(!s)return null;const h=new Date();h.setHours(0,0,0,0);return Math.ceil((new Date(s+'T00:00:00')-h)/86400000)}
 function vencCls(s){const d=diffDias(s);if(d===null)return'';if(d<0)return'text-red bold';if(d<=30)return'text-yellow';return'text-green'}
@@ -1540,17 +1601,18 @@ function filtrarLaudoNorma(v){fNorma=v;filtrarLaudos()}
 
 // ─── VER LAUDO ───────────────────────────────────────────
 let laudoVerandoId=null;
-function verLaudo(id){
+async function verLaudo(id){
   const l=DB.laudos.find(x=>x.id===id);if(!l)return;
   laudoVerandoId=id;
   document.getElementById('ver-title').textContent=`Laudo ${l.id}`;
   const nrCls=(l.norma||'').toLowerCase().replace('-','');
   const ncItems=(l.checklist||[]).filter(c=>c.resp==='NC');
 
+  const fotosLaudo=(l.fotos&&l.fotos.length)?l.fotos:(l.fotosDriveId?await obterFotosDoLaudo(l):[]);
   let fotosHtml='';
-  if(l.fotos&&l.fotos.length){
-    fotosHtml=`<div class="mb-12"><div class="text-xs mb-8" style="font-weight:600">📷 Registro Fotográfico (${l.fotos.length} fotos)</div><div class="photo-grid">`;
-    l.fotos.forEach(f=>{fotosHtml+=`<div class="photo-thumb"><img src="${f.data}" alt="${f.legenda||''}"><div class="ph-cap">${f.legenda||''}</div></div>`});
+  if(fotosLaudo&&fotosLaudo.length){
+    fotosHtml=`<div class="mb-12"><div class="text-xs mb-8" style="font-weight:600">📷 Registro Fotográfico (${fotosLaudo.length} fotos)</div><div class="photo-grid">`;
+    fotosLaudo.forEach(f=>{fotosHtml+=`<div class="photo-thumb"><img src="${f.data}" alt="${f.legenda||''}"><div class="ph-cap">${f.legenda||''}</div></div>`});
     fotosHtml+='</div></div>';
   }
 
@@ -1612,12 +1674,17 @@ function editarLaudoVer(){
   closeModal('modal-ver');
   editarLaudo(laudoVerandoId);
 }
-function imprimirLaudo(){
+async function imprimirLaudo(){
   if(!laudoVerandoId)return;
   const l=DB.laudos.find(x=>x.id===laudoVerandoId);
   if(!l)return;
   const win=window.open('','_blank');
-  win.document.write(gerarImpressao(l,DB.cfg));
+  if(l.fotosDriveId&&(!l.fotos||!l.fotos.length)){
+    win.document.write('<p style="font-family:sans-serif;padding:24px;color:#555">Carregando fotos do Google Drive...</p>');
+  }
+  const fotos=(l.fotos&&l.fotos.length)?l.fotos:(l.fotosDriveId?await obterFotosDoLaudo(l):[]);
+  win.document.open();
+  win.document.write(gerarImpressao({...l,fotos},DB.cfg));
   win.document.close();
   win.focus();
   setTimeout(()=>win.print(),600);
@@ -1682,7 +1749,7 @@ function gerarImpressao(l,cfg){
         <table style="width:160px"><thead><tr><th style="width:50px">Ponto</th><th>Esp. (mm)</th></tr></thead><tbody>${tabelaRows}</tbody></table>
       </div>
     </div>
-    ${l.nr13ClasseFluido?`<div style="margin-top:10px;padding:8px;background:#f0f4ff;border-left:3px solid #3b82f6;font-size:10px"><strong>Classe do Fluido:</strong> Classe ${l.nr13ClasseFluido} &nbsp;|&nbsp; <strong>Grupo Potencial de Risco:</strong> Grupo ${l.nr13Grupo||'—'} &nbsp;|&nbsp; <strong>PV:</strong> ${l.nr13Vol&&l.nr13Pmta?(parseFloat(l.nr13Vol)*parseFloat(l.nr13Pmta)).toFixed(2)+' MPa·m³':'—'}</div>`:''}
+    ${l.nr13ClasseFluido?`<div style="margin-top:10px;padding:8px;background:#f0f4ff;border-left:3px solid #3b82f6;font-size:10px"><strong>Classe do Fluido:</strong> Classe ${l.nr13ClasseFluido} &nbsp;|&nbsp; <strong>Grupo Potencial de Risco:</strong> Grupo ${l.nr13Grupo||'—'} &nbsp;|&nbsp; <strong>P.V:</strong> ${l.nr13Vol&&l.nr13Pmta?(parseFloat(l.nr13Vol)*kgfCm2ParaMPa(l.nr13Pmta)).toFixed(3)+' MPa·m³':'—'}</div>`:''}
     </div>`;
   }
 
@@ -1765,7 +1832,6 @@ ${l.artNum?`<h2>8. ART</h2><div class="box">ART Nº ${l.artNum} — Emitida em $
     <div>Adamantina / SP</div>
     <div style="margin-top:3px"><a href="mailto:junamar@junamar.com" style="color:#1a6fc4;text-decoration:none">junamar@junamar.com</a></div>
     <div><a href="http://www.junamar.com" style="color:#1a6fc4;text-decoration:none">www.junamar.com</a></div>
-    <div style="margin-top:5px;font-size:8.5px;color:#aaa">Gerado por LaudosPRO v9 · ${new Date().toLocaleString('pt-BR')}</div>
     ${l.validade?`<div style="margin-top:3px;font-weight:700;color:#222;font-size:10px">Validade: ${l.validade}</div>`:''}
   </div>
 </div>
@@ -2016,6 +2082,85 @@ function atualizarStatusGDrive(){
   const el=document.getElementById('gdrive-status');if(el)el.textContent=texto;
   const q=document.getElementById('gdrive-quick-status');
   if(q)q.textContent=last?`✓ ${new Date(last).toLocaleDateString('pt-BR')}`:'Google Drive';
+  const tb=document.getElementById('topbar-gdrive-btn');
+  if(tb){
+    tb.textContent=conectado?'☁️✓ Salvo na Nuvem':'☁️ Salvar na Nuvem';
+    tb.title=last?`Último envio ao Drive: ${new Date(last).toLocaleString('pt-BR')}`:'Salvar backup no Google Drive';
+  }
+}
+
+// ─── FOTOS DE LAUDOS NO GOOGLE DRIVE (evita limite de ~5MB do localStorage) ──
+// Quando não há espaço local suficiente para salvar um laudo com fotos, elas
+// são enviadas automaticamente ao Google Drive (um arquivo JSON por laudo) e
+// apenas uma referência (fotosDriveId) fica salva localmente. As fotos são
+// buscadas do Drive sob demanda ao visualizar, editar ou imprimir o laudo.
+window._fotosDriveCache=window._fotosDriveCache||{};
+
+async function _gdriveGarantirConectado(){
+  if(gdriveAccessToken)return true;
+  if(!_gdriveClientId())return false;
+  return new Promise(resolve=>{
+    conectarGoogleDrive(()=>resolve(!!gdriveAccessToken));
+    setTimeout(()=>resolve(!!gdriveAccessToken),10000);
+  });
+}
+
+async function gdriveSalvarFotosLaudo(laudoId,fotos,fileIdExistente){
+  const ok=await _gdriveGarantirConectado();
+  if(!ok)throw new Error('Google Drive não conectado');
+  const nomeArquivo=`laudospro-fotos-${laudoId}.json`;
+  const blob=new Blob([JSON.stringify({laudoId,fotos,dt:new Date().toISOString()})],{type:'application/json'});
+  const form=new FormData();
+  form.append('metadata',new Blob([JSON.stringify({name:nomeArquivo,mimeType:'application/json'})],{type:'application/json'}));
+  form.append('file',blob);
+  let url,method;
+  if(fileIdExistente){url=`https://www.googleapis.com/upload/drive/v3/files/${fileIdExistente}?uploadType=multipart`;method='PATCH';}
+  else{url='https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';method='POST';}
+  let res=await fetch(url,{method,headers:{Authorization:`Bearer ${gdriveAccessToken}`},body:form});
+  if(res.status===401){
+    gdriveAccessToken=null;
+    const ok2=await _gdriveGarantirConectado();
+    if(!ok2)throw new Error('Falha de autenticação com o Google');
+    return gdriveSalvarFotosLaudo(laudoId,fotos,fileIdExistente);
+  }
+  if(res.status===404&&fileIdExistente){
+    return gdriveSalvarFotosLaudo(laudoId,fotos,null);
+  }
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  window._fotosDriveCache[data.id]=fotos;
+  return data.id;
+}
+
+async function gdriveCarregarFotosLaudo(fileId){
+  const ok=await _gdriveGarantirConectado();
+  if(!ok)throw new Error('Google Drive não conectado');
+  const res=await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,{headers:{Authorization:`Bearer ${gdriveAccessToken}`}});
+  if(res.status===401){
+    gdriveAccessToken=null;
+    const ok2=await _gdriveGarantirConectado();
+    if(!ok2)throw new Error('Falha de autenticação com o Google');
+    return gdriveCarregarFotosLaudo(fileId);
+  }
+  if(!res.ok)throw new Error('HTTP '+res.status);
+  const data=await res.json();
+  return data.fotos||[];
+}
+
+// Retorna as fotos do laudo (locais ou buscadas do Drive), com cache em memória.
+async function obterFotosDoLaudo(l){
+  if(l.fotos&&l.fotos.length)return l.fotos;
+  if(!l.fotosDriveId)return[];
+  if(window._fotosDriveCache[l.fotosDriveId])return window._fotosDriveCache[l.fotosDriveId];
+  try{
+    notif('Carregando fotos do Google Drive...','info');
+    const fotos=await gdriveCarregarFotosLaudo(l.fotosDriveId);
+    window._fotosDriveCache[l.fotosDriveId]=fotos;
+    return fotos;
+  }catch(e){
+    notif('Não foi possível carregar as fotos do Google Drive: '+e.message,'err');
+    return[];
+  }
 }
 
 // ════════════════════════════════════════
@@ -2114,7 +2259,7 @@ function openModalEquip(id=null){
       document.getElementById('eq-serie').value=e.serie||'';document.getElementById('eq-km').value=e.km||'';
       document.getElementById('eq-local').value=e.local||'';document.getElementById('eq-ultima').value=e.ultima||'';
       if(e.outroDesc)document.getElementById('eq-outro-desc').value=e.outroDesc;
-      if(e.norma==='NR-13'){document.getElementById('eq-nr13-extra').style.display='block';document.getElementById('eq-cat13').value=e.cat13||'';document.getElementById('eq-spie').value=e.spie||'0';document.getElementById('eq-fluido').value=e.fluido||'';document.getElementById('eq-pressao').value=e.pressao||'';const pmtaEl=document.getElementById('eq-pmta');if(pmtaEl)pmtaEl.value=e.pmta||'';const pOpEl=document.getElementById('eq-pressao-op');if(pOpEl)pOpEl.value=e.pressaoOp||'';const nsEl=document.getElementById('eq-nserie');if(nsEl)nsEl.value=e.nserieEq||''}
+      if(e.norma==='NR-13'){document.getElementById('eq-nr13-extra').style.display='block';document.getElementById('eq-cat13').value=e.cat13||'';document.getElementById('eq-spie').value=e.spie||'0';document.getElementById('eq-fluido').value=e.fluido||'';document.getElementById('eq-pressao').value=e.pressao||'';const pmtaEl=document.getElementById('eq-pmta');if(pmtaEl)pmtaEl.value=e.pmta||'';const pOpEl=document.getElementById('eq-pressao-op');if(pOpEl)pOpEl.value=e.pressaoOp||'';const nsEl=document.getElementById('eq-nserie');if(nsEl)nsEl.value=e.nserieEq||'';if(document.getElementById('eq-classe-fluido'))document.getElementById('eq-classe-fluido').value=e.classeFluido||'';if(document.getElementById('eq-volume'))document.getElementById('eq-volume').value=e.volume||''}
       updateEquipNorma();
     }
   }
@@ -2148,7 +2293,7 @@ function deletarEquip(id){if(!confirm('Excluir equipamento?'))return;DB.equips=D
 // ════════════════════════════════════════
 // ─── NOVO LAUDO ──────────────────────────────────────────
 // ════════════════════════════════════════
-let ldStep=1,ldFotos=[],ldCheckState={},ldEditId=null,ldARTPDFData=null;
+let ldStep=1,ldFotos=[],ldCheckState={},ldEditId=null,ldARTPDFData=null,ldFotosDriveId=null,ldFotosCarregando=false;
 
 const ITENS_BY_TIPO={
   'Caminhão Munck':['Pinhão do mastro (trincas/rachaduras)','Pinos das lanças (trincas/deformações)','Conexões hidráulicas (vazamentos)','Mangueiras (fissuras/inchaços)','Parafusos de fixação das sapatas (aperto)','Lança (empeno)','Lança (folga excessiva)','Moitão e trava de segurança do guincho','Manetes de comando (vazamento/operação)','Patolas/estabilizadores (funcionamento)','Tabela de içamento de carga (legível/acessível)','Indicador de carga na lança','Nível de óleo hidráulico','Bomba hidráulica (funcionamento/vazamento)','Cabo de aço do guincho (condições/fios rompidos)'],
@@ -2208,7 +2353,7 @@ const CHECKLISTS_NR={
 };
 
 function openNovoLaudo(cliId=null){
-  ldStep=1;ldFotos=[];ldCheckState={};ldEditId=null;ldARTPDFData=null;
+  ldStep=1;ldFotos=[];ldCheckState={};ldEditId=null;ldARTPDFData=null;ldFotosDriveId=null;ldFotosCarregando=false;
   window.ldItensState={};
   ['ld-id','ld-tag','ld-norma','ld-fab','ld-modelo','ld-cap','ld-serie','ld-km','ld-art','ld-numinsp','ld-consinit','ld-cond','ld-nc','ld-conc','ld-risco','ld-validade','ld-art-num','ld-art-val','ld-prof'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   document.getElementById('ld-data').value=new Date().toISOString().split('T')[0];
@@ -2231,10 +2376,10 @@ function openNovoLaudo(cliId=null){
 }
 function openNovoLaudoCliente(cliId){openNovoLaudo(cliId)}
 
-function editarLaudo(id){
+async function editarLaudo(id){
   const l=DB.laudos.find(x=>x.id===id);if(!l)return;
   ldStep=1;ldEditId=id;ldFotos=l.fotos?JSON.parse(JSON.stringify(l.fotos)):[];ldCheckState={};
-  ldARTPDFData=null;
+  ldARTPDFData=null;ldFotosDriveId=l.fotosDriveId||null;ldFotosCarregando=false;
   document.getElementById('mlaudo-title').textContent='Editar Laudo '+l.id;
   document.getElementById('ld-id').value=l.id;
   const sel=document.getElementById('ld-cli');
@@ -2298,6 +2443,21 @@ function editarLaudo(id){
   }
   renderLaudoStep(1);
   openModal('modal-laudo');
+  // Se as fotos deste laudo foram salvas no Google Drive (por falta de espaço
+  // local), busca-as em segundo plano para permitir visualização/edição.
+  if(l.fotosDriveId&&!ldFotos.length){
+    ldFotosCarregando=true;
+    document.getElementById('photo-count').textContent='☁️ Carregando fotos do Google Drive...';
+    obterFotosDoLaudo(l).then(fotos=>{
+      if(ldEditId!==id)return;
+      ldFotos=fotos.map(f=>({...f}));
+      renderFotos();
+    }).finally(()=>{
+      if(ldEditId!==id)return;
+      ldFotosCarregando=false;
+      document.getElementById('photo-count').textContent=ldFotos.length?`${ldFotos.length} foto(s) adicionada(s)`:'Nenhuma foto adicionada';
+    });
+  }
 }
 
 function loadEquipsByCliente(){
@@ -2451,7 +2611,7 @@ function renderFotos(){
       <div class="ph-cap">${f.legenda||'Figura '+(i+1)+' — Clique para adicionar legenda'}</div>
     </div>`).join('');
 }
-function removerFoto(i){ldFotos.splice(i,1);renderFotos()}
+function removerFoto(i){ldFotos.splice(i,1);if(!ldFotos.length)ldFotosDriveId=null;renderFotos()}
 function editarLegenda(i){
   const leg=prompt('Legenda da foto (ex: Figura 2 – Pinhão do Mastro do Munck):',ldFotos[i].legenda||'Figura '+(i+1));
   if(leg!==null){ldFotos[i].legenda=leg;renderFotos()}
@@ -2655,9 +2815,10 @@ Escreva APENAS o texto da conclusão, sem título, sem tópicos, sem prefácio.`
 function usarConcIA(){const txt=document.getElementById('ia-conc-out').textContent;if(txt&&!txt.includes('⚠')&&!txt.includes('Clique')){document.getElementById('ld-conc').value=txt;notif('Texto inserido!','ok')}}
 function copiarIA(){const txt=document.getElementById('ia-rec-out').textContent;navigator.clipboard?.writeText(txt).then(()=>notif('Copiado!','ok'))}
 
-function salvarLaudo(){
+async function salvarLaudo(){
   const conc=document.getElementById('ld-conc').value.trim();
   if(!conc){notif('Adicione a conclusão do laudo.','err');return}
+  if(ldFotosCarregando){notif('Aguarde o carregamento das fotos do Google Drive antes de salvar.','err');return}
   const statusVal=document.getElementById('ld-status').value;
   const novo=_coletarDadosLaudo(statusVal);
   // Verifica espaço
@@ -2665,9 +2826,16 @@ function salvarLaudo(){
     notif('Espaço de armazenamento insuficiente. Exporte o backup e limpe dados antigos.','err');return;
   }
   if(ldFotos.length>0&&!_verificarEspacoLocalStorage(novo)){
-    const dica=_obterDicasCompressao();
-    if(!confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s).\n\n${dica}\n\nDeseja salvar o laudo SEM as fotos?`)){return;}
-    novo.fotos=[];
+    try{
+      notif('Espaço local insuficiente — enviando fotos ao Google Drive...','info');
+      const fileId=await gdriveSalvarFotosLaudo(novo.id,ldFotos,ldFotosDriveId);
+      novo.fotosDriveId=fileId;novo.fotos=[];ldFotosDriveId=fileId;
+      notif('Fotos salvas no Google Drive (armazenamento local insuficiente).','ok');
+    }catch(e){
+      const dica=_obterDicasCompressao();
+      if(!confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s) e não foi possível enviar ao Google Drive (${e.message}).\n\n${dica}\n\nDeseja salvar o laudo SEM as fotos?`)){return;}
+      novo.fotos=[];
+    }
   }
   const eqId=document.getElementById('ld-eq').value;
   const e=DB.equips.find(x=>x.id===eqId);
@@ -2721,6 +2889,7 @@ function _coletarDadosLaudo(status){
     nc:document.getElementById('ld-nc').value,
     profissionalIdx:document.getElementById('ld-prof')?.value||'',
     fotos:ldFotos,
+    fotosDriveId:ldFotosDriveId||undefined,
     itens:itensArr,
     checklist:Object.values(ldCheckState),
     recomendacoes:document.getElementById('ia-rec-out')?.textContent.includes('Clique')?'':document.getElementById('ia-rec-out')?.textContent||'',
@@ -2757,10 +2926,11 @@ function _verificarEspacoLocalStorage(dados){
   }catch(e){return false;}
 }
 
-function salvarRascunho(){
+async function salvarRascunho(){
   const cliId=document.getElementById('ld-cli').value;
   const eqId=document.getElementById('ld-eq').value;
   if(!cliId||!eqId){notif('Selecione cliente e equipamento primeiro.','err');return;}
+  if(ldFotosCarregando){notif('Aguarde o carregamento das fotos do Google Drive antes de salvar.','err');return}
   const novo=_coletarDadosLaudo('Rascunho');
   // Verifica espaço sem fotos
   const semFotos={...novo,fotos:[]};
@@ -2770,12 +2940,19 @@ function salvarRascunho(){
   }
   // Verifica com fotos
   if(ldFotos.length>0&&!_verificarEspacoLocalStorage(novo)){
-    const dica=_obterDicasCompressao();
-    if(confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s).\n\n${dica}\n\nDeseja salvar o rascunho SEM as fotos para não perder o conteúdo?`)){
-      novo.fotos=[];
-      notif('Rascunho salvo sem fotos (espaço insuficiente).','info');
-    } else {
-      return;
+    try{
+      notif('Espaço local insuficiente — enviando fotos ao Google Drive...','info');
+      const fileId=await gdriveSalvarFotosLaudo(novo.id,ldFotos,ldFotosDriveId);
+      novo.fotosDriveId=fileId;novo.fotos=[];ldFotosDriveId=fileId;
+      notif('Rascunho salvo — fotos armazenadas no Google Drive (espaço local insuficiente).','ok');
+    }catch(e){
+      const dica=_obterDicasCompressao();
+      if(confirm(`⚠ Espaço insuficiente para salvar com ${ldFotos.length} foto(s) e não foi possível enviar ao Google Drive (${e.message}).\n\n${dica}\n\nDeseja salvar o rascunho SEM as fotos para não perder o conteúdo?`)){
+        novo.fotos=[];
+        notif('Rascunho salvo sem fotos (espaço insuficiente).','info');
+      } else {
+        return;
+      }
     }
   }
   try{
@@ -2830,6 +3007,47 @@ function updateCatOpts(){
   const sel=document.getElementById('p-cat');
   sel.innerHTML=tipo==='caldeira'?'<option value="A">A</option><option value="B">B</option>':'<option value="I">I</option><option value="II">II</option><option value="III">III</option><option value="IV">IV</option><option value="V">V</option>';
   document.getElementById('p-ei-wrap').style.display=tipo==='caldeira'?'none':'flex';
+  const cw=document.getElementById('p-classe-wrap');
+  if(cw)cw.style.display=tipo==='caldeira'?'none':'block';
+  const origem=document.getElementById('p-cat-origem');
+  if(origem)origem.textContent='';
+}
+
+// ─── Classe do Fluido + Grupo Potencial de Risco → Categoria automática ──
+window._pClasseFluido='';
+window._pGrupo='';
+function pSelecionarClasseFluido(cls){
+  window._pClasseFluido=cls;
+  ['A','B','C','D'].forEach(c=>{
+    const el=document.getElementById('p-classe-'+c);
+    if(el)el.style.borderColor='var(--border2)';
+  });
+  const cores={A:'var(--red)',B:'var(--orange)',C:'var(--green)',D:'var(--blue)'};
+  const sel=document.getElementById('p-classe-'+cls);
+  if(sel)sel.style.borderColor=cores[cls]||'var(--blue)';
+  pAplicarCategoriaAutomatica();
+}
+function pCalcGrupoPotencial(){
+  const vol=parseFloat(document.getElementById('p-vol')?.value||0);
+  const pmtaKgf=parseFloat(document.getElementById('p-pmta')?.value||0);
+  const pvEl=document.getElementById('p-pv');
+  if(!vol||!pmtaKgf){if(pvEl)pvEl.value='';window._pGrupo='';pAplicarCategoriaAutomatica();return;}
+  const pmtaMPa=kgfCm2ParaMPa(pmtaKgf); // NR-13, 13.5.1.1.3: P deve ser considerado em MPa
+  const pv=vol*pmtaMPa;
+  if(pvEl)pvEl.value=pv.toFixed(3);
+  window._pGrupo=nr13Grupo(pv);
+  pAplicarCategoriaAutomatica();
+}
+function pAplicarCategoriaAutomatica(){
+  const cls=window._pClasseFluido,grp=window._pGrupo;
+  const resBox=document.getElementById('p-cat-auto-res'),resTxt=document.getElementById('p-cat-auto-txt'),origem=document.getElementById('p-cat-origem');
+  if(!cls||!grp){if(resBox)resBox.style.display='none';return;}
+  const cat=NR13_TABELA_CATEGORIA[cls+grp]||'II';
+  document.getElementById('p-cat').value=cat;
+  if(resBox)resBox.style.display='block';
+  if(resTxt)resTxt.textContent=`Categoria ${cat} — Classe ${cls} de fluido + Grupo ${grp} de potencial de risco (NR-13)`;
+  if(origem)origem.textContent='(definida automaticamente)';
+  calcPrazo();
 }
 function calcPrazo(){
   const tipo=document.getElementById('p-tipo').value,cat=document.getElementById('p-cat').value;
@@ -3198,16 +3416,20 @@ function baixarARTPDF(){
   a.click();
 }
 
-function baixarLaudoPDF(){
+async function baixarLaudoPDF(){
   if(!laudoVerandoId)return;
   const l=DB.laudos.find(x=>x.id===laudoVerandoId);if(!l)return;
-  const html=gerarImpressao(l,DB.cfg);
-  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`Laudo-${l.id}-${l.tag||'equip'}.html`;a.click();
-  URL.revokeObjectURL(url);
-  notif('Laudo baixado! Abra o arquivo e imprima como PDF.','ok');
+  const win=window.open('','_blank');
+  if(l.fotosDriveId&&(!l.fotos||!l.fotos.length)){
+    win.document.write('<p style="font-family:sans-serif;padding:24px;color:#555">Carregando fotos do Google Drive...</p>');
+  }
+  const fotos=(l.fotos&&l.fotos.length)?l.fotos:(l.fotosDriveId?await obterFotosDoLaudo(l):[]);
+  win.document.open();
+  win.document.write(gerarImpressao({...l,fotos},DB.cfg));
+  win.document.close();
+  win.focus();
+  notif('Use "Salvar como PDF" na janela de impressão para baixar o laudo em PDF.','ok');
+  setTimeout(()=>win.print(),600);
 }
 
 function usarRiscoIA(){
@@ -3396,7 +3618,9 @@ window.salvarEquip = function() {
     pressao:document.getElementById('eq-pressao')?.value||'',
     pmta:document.getElementById('eq-pmta')?.value.trim()||'',
     pressaoOp:document.getElementById('eq-pressao-op')?.value.trim()||'',
-    nserieEq:document.getElementById('eq-nserie')?.value.trim()||''
+    nserieEq:document.getElementById('eq-nserie')?.value.trim()||'',
+    classeFluido: document.getElementById('eq-classe-fluido')?.value||'',
+    volume: document.getElementById('eq-volume')?.value||''
   };
   let lista = DB.equips;
   const idx = lista.findIndex(x => x.id === id);
@@ -3648,20 +3872,33 @@ function selecionarClasseFluido(cls){
   calcGrupoPotencial();
 }
 
+function _getNR13Cat(cls, vol, pressaoKgfCm2) {
+  if(!cls || !vol || !pressaoKgfCm2) return '';
+  const pMPa = kgfCm2ParaMPa(pressaoKgfCm2); // NR-13, 13.5.1.1.3 exige P em MPa
+  const pv = vol * pMPa;
+  const grp = nr13Grupo(pv);
+  return NR13_TABELA_CATEGORIA[cls+grp] || '';
+}
+
+function calcCategoriaEquip() {
+  const cls = document.getElementById('eq-classe-fluido').value;
+  const vol = parseFloat(document.getElementById('eq-volume').value || 0);
+  const pressao = parseFloat(document.getElementById('eq-pressao').value || 0);
+  const cat = _getNR13Cat(cls, vol, pressao);
+  if(cat) document.getElementById('eq-cat13').value = cat;
+}
+
 function calcGrupoPotencial(){
   const vol=parseFloat(document.getElementById('nr13-vol')?.value||0);
-  const pmta=parseFloat(document.getElementById('nr13-pmta')?.value||0);
+  const pmtaKgf=parseFloat(document.getElementById('nr13-pmta')?.value||0);
   const pvEl=document.getElementById('nr13-pv');
-  if(!vol||!pmta){if(pvEl)pvEl.value='';return;}
-  const pv=vol*pmta;
-  if(pvEl)pvEl.value=pv.toFixed(2);
-  // Determine group — NR-13, item 13.5.1.1.3 (P em MPa × V em m³)
-  let grp='',cor='var(--blue)';
-  if(pv>100){grp='1';cor='var(--red)'}
-  else if(pv>30){grp='2';cor='var(--orange)'}
-  else if(pv>2.5){grp='3';cor='var(--yellow)'}
-  else if(pv>1){grp='4';cor='var(--blue)'}
-  else{grp='5';cor='var(--green)'}
+  if(!vol||!pmtaKgf){if(pvEl)pvEl.value='';return;}
+  const pmtaMPa=kgfCm2ParaMPa(pmtaKgf); // NR-13, 13.5.1.1.3: P deve ser considerado em MPa
+  const pv=vol*pmtaMPa;
+  if(pvEl)pvEl.value=pv.toFixed(3)+' MPa·m³  ('+pmtaKgf+' kgf/cm² = '+pmtaMPa.toFixed(4)+' MPa)';
+  const grp=nr13Grupo(pv);
+  const cores={'1':'var(--red)','2':'var(--orange)','3':'var(--yellow)','4':'var(--blue)','5':'var(--green)'};
+  const cor=cores[grp];
   window._nr13Grupo=grp;
   // Highlight group
   ['1','2','3','4','5'].forEach(g=>{
@@ -3675,21 +3912,14 @@ function calcGrupoPotencial(){
   const grpNome=document.getElementById('nr13-grupo-nome');
   if(grpNome)grpNome.textContent='Grupo '+grp+({1:' (P.V > 100)',2:' (30 < P.V ≤ 100)',3:' (2,5 < P.V ≤ 30)',4:' (1 < P.V ≤ 2,5)',5:' (P.V ≤ 1)'}[grp]||'');
   const pvRes=document.getElementById('nr13-pv-res');
-  if(pvRes)pvRes.textContent=pv.toFixed(2);
+  if(pvRes)pvRes.textContent=pv.toFixed(3);
 }
 
 function aplicarGrupoCategoria(){
   const cls=window._nr13ClasseFluido;
   const grp=window._nr13Grupo;
   if(!cls||!grp){notif('Defina a classe do fluido e calcule o grupo de risco primeiro.','err');return;}
-  // Tabela 1 da NR-13 (item 13.5.1.1): Classe × Grupo → Categoria
-  const tabela={
-    'A1':'I','A2':'I','A3':'II','A4':'III','A5':'III',
-    'B1':'I','B2':'II','B3':'III','B4':'IV','B5':'IV',
-    'C1':'I','C2':'II','C3':'III','C4':'IV','C5':'V',
-    'D1':'II','D2':'III','D3':'IV','D4':'V','D5':'V',
-  };
-  const cat=tabela[cls+grp]||'II';
+  const cat=NR13_TABELA_CATEGORIA[cls+grp]||'II';
   // Pre-fill the category selects
   const catLaudo=document.getElementById('ld-p-cat');
   if(catLaudo)catLaudo.value=cat;
@@ -3943,6 +4173,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('cnt-clientes').textContent=DB.clientes.length;
   document.getElementById('cnt-equipamentos').textContent=DB.equips.length;
   renderDashboard();calcHRN();updateCatOpts();renderCalibDash&&renderCalibDash();
+  atualizarStatusGDrive();
   if(!c.apikey)setTimeout(()=>notif('Configure sua chave gratuita do OpenRouter em Configurações para usar a IA.','info'),1500);
 });
 </script>
