@@ -345,6 +345,7 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
       <div class="nav-lbl">Ferramentas</div>
       <button class="nav-btn" onclick="nav('calculadora')" id="nav-calculadora"><span class="ico">🧮</span><span class="lbl">Calc. HRN</span></button>
       <button class="nav-btn" onclick="nav('prazos')" id="nav-prazos"><span class="ico">📅</span><span class="lbl">Prazos NR-13</span></button>
+      <button class="nav-btn" onclick="openChecklistBranco()" id="nav-ck-branco"><span class="ico">🖨️</span><span class="lbl">Imprimir Checklist</span></button>
       <button class="nav-btn" onclick="nav('relatorios')" id="nav-relatorios"><span class="ico">📈</span><span class="lbl">Relatórios e Backup</span></button>
       <button class="nav-btn" onclick="nav('config')" id="nav-config"><span class="ico">⚙</span><span class="lbl">Configurações</span></button>
     </div>
@@ -1209,6 +1210,7 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
     <div id="ls3" style="display:none">
       <div class="flex items-center gap-10 mb-12">
         <div class="bold flex-1" id="ck-title">Checklist de Inspeção</div>
+        <button class="btn btn-sm" onclick="imprimirChecklistBrancoDoLaudo()" title="Imprimir este checklist em branco para preenchimento em campo">🖨️ Imprimir em branco</button>
         <div class="text-xs">
           <span class="text-green bold" id="ck-ok">0</span> C &nbsp;
           <span class="text-red bold" id="ck-nc">0</span> NC &nbsp;
@@ -1341,6 +1343,42 @@ tbody tr:hover td{background:rgba(128,128,128,.04)}
     <button class="btn" onclick="baixarLaudoPDF()">⬇ Baixar PDF</button>
     <button class="btn" onclick="imprimirLaudo()">🖨 Imprimir</button>
   </div>
+  </div>
+</div>
+
+<!-- MODAL CHECKLIST EM BRANCO -->
+<div class="modal-overlay" id="modal-ck-branco">
+  <div class="modal"><div class="modal-hdr"><span class="modal-title">🖨️ Imprimir Checklist de Inspeção em Branco</span><button class="btn btn-icon btn-ghost" onclick="closeModal('modal-ck-branco')">✕</button></div>
+  <div class="modal-body">
+    <p class="text-sm mb-12" style="color:var(--text2)">Gere uma folha de checklist em branco, conforme a norma escolhida, para preenchimento manual em campo. Depois é só transcrever as respostas para o sistema ao criar o laudo.</p>
+    <div class="fg2 mb-12">
+      <div class="fg f-full"><label class="fl">Norma<span class="req">*</span></label>
+        <select class="fs" id="ckb-norma" onchange="popularEquipsChecklistBranco();toggleOrientacaoChecklistBranco()">
+          <option value="NR-11">NR-11 — Transporte, Movimentação, Armazenagem e Manuseio</option>
+          <option value="NR-12">NR-12 — Segurança no Trabalho em Máquinas e Equipamentos</option>
+          <option value="NR-13">NR-13 — Caldeiras, Vasos de Pressão e Tubulações</option>
+        </select>
+      </div>
+      <div class="fg f-full"><label class="fl">Vincular a um equipamento cadastrado (opcional)</label>
+        <select class="fs" id="ckb-equip" onchange="preencherCabecalhoChecklistBranco()">
+          <option value="">Não vincular — preencher manualmente em campo</option>
+        </select>
+      </div>
+      <div class="fg f-full" id="ckb-orientacao-wrap" style="display:none">
+        <label class="fl">Mapa de pontos de medição de espessura (casco)</label>
+        <select class="fs" id="ckb-orientacao">
+          <option value="horizontal">Vaso/Tanque Horizontal</option>
+          <option value="vertical">Vaso/Tanque Vertical</option>
+          <option value="ambas">Incluir os dois mapas (horizontal e vertical)</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Cliente</label><input class="fi" id="ckb-cliente" placeholder="Deixe em branco para preencher em campo"></div>
+      <div class="fg"><label class="fl">TAG / Equipamento</label><input class="fi" id="ckb-tag" placeholder="Deixe em branco para preencher em campo"></div>
+      <div class="fg"><label class="fl">Local / Setor</label><input class="fi" id="ckb-local" placeholder="Opcional"></div>
+      <div class="fg"><label class="fl">Data da Inspeção</label><input class="fi" id="ckb-data" placeholder="Opcional — deixe em branco para preencher à mão"></div>
+    </div>
+  </div>
+  <div class="modal-ftr"><button class="btn" onclick="closeModal('modal-ck-branco')">Cancelar</button><button class="btn btn-primary" onclick="imprimirChecklistBranco()">🖨️ Imprimir Checklist</button></div>
   </div>
 </div>
 
@@ -1861,6 +1899,161 @@ ${l.artNum?`<h2>8. ART</h2><div class="box">ART Nº ${l.artNum} — Emitida em $
 </body></html>`;
 }
 
+// ════════════════════════════════════════
+// ─── CHECKLIST EM BRANCO (impressão para preenchimento em campo) ───
+// ════════════════════════════════════════
+function imprimirChecklistBrancoDoLaudo(){
+  const norma=document.getElementById('ld-norma').value||'NR-11';
+  const cliSel=document.getElementById('ld-cli');
+  const cliNome=cliSel?.selectedOptions[0]?.text||'';
+  const meta={
+    cliente:cliNome==='Selecionar...'?'':cliNome,
+    tag:document.getElementById('ld-tag')?.value.trim()||'',
+    local:document.getElementById('ld-unidade')?.value.trim()||'',
+    data:'',
+    orientacao:document.getElementById('vp-orientacao')?.value||'horizontal',
+  };
+  const win=window.open('','_blank');
+  win.document.open();
+  win.document.write(gerarChecklistBrancoHTML(norma,meta,DB.cfg));
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(),400);
+}
+function openChecklistBranco(){
+  document.getElementById('ckb-norma').value='NR-11';
+  document.getElementById('ckb-equip').innerHTML='<option value="">Não vincular — preencher manualmente em campo</option>';
+  document.getElementById('ckb-cliente').value='';
+  document.getElementById('ckb-tag').value='';
+  document.getElementById('ckb-local').value='';
+  document.getElementById('ckb-data').value='';
+  document.getElementById('ckb-orientacao').value='horizontal';
+  popularEquipsChecklistBranco();
+  toggleOrientacaoChecklistBranco();
+  openModal('modal-ck-branco');
+}
+function toggleOrientacaoChecklistBranco(){
+  const norma=document.getElementById('ckb-norma').value;
+  document.getElementById('ckb-orientacao-wrap').style.display=(norma==='NR-13')?'':'none';
+}
+function popularEquipsChecklistBranco(){
+  const norma=document.getElementById('ckb-norma').value;
+  const sel=document.getElementById('ckb-equip');
+  const equips=DB.equips.filter(e=>e.norma===norma);
+  sel.innerHTML='<option value="">Não vincular — preencher manualmente em campo</option>'+
+    equips.map(e=>`<option value="${e.id}">${e.tag} — ${e.tipo}${e.clienteNome?' ('+e.clienteNome+')':''}</option>`).join('');
+}
+function preencherCabecalhoChecklistBranco(){
+  const id=document.getElementById('ckb-equip').value;
+  if(!id)return;
+  const eq=DB.equips.find(e=>e.id===id);
+  if(!eq)return;
+  document.getElementById('ckb-cliente').value=eq.clienteNome||'';
+  document.getElementById('ckb-tag').value=`${eq.tag} — ${eq.tipo}${eq.modelo?' / '+eq.modelo:''}`;
+  document.getElementById('ckb-local').value=eq.local||'';
+}
+function imprimirChecklistBranco(){
+  const norma=document.getElementById('ckb-norma').value;
+  const meta={
+    cliente:document.getElementById('ckb-cliente').value.trim(),
+    tag:document.getElementById('ckb-tag').value.trim(),
+    local:document.getElementById('ckb-local').value.trim(),
+    data:document.getElementById('ckb-data').value.trim(),
+    orientacao:document.getElementById('ckb-orientacao').value||'horizontal',
+  };
+  const win=window.open('','_blank');
+  win.document.open();
+  win.document.write(gerarChecklistBrancoHTML(norma,meta,DB.cfg));
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(),400);
+  closeModal('modal-ck-branco');
+}
+function gerarChecklistBrancoHTML(norma,meta,cfg){
+  cfg=cfg||{};
+  const eng=(typeof getEngAtivo==='function')?getEngAtivo():{nome:cfg.nome||'',crea:cfg.crea||'',especialidade:cfg.especialidade||'Engenheiro'};
+  const engNome=eng.nome||cfg.nome||'Engenheiro Responsável';
+  const engCrea=eng.crea||cfg.crea||'';
+  const itens=CHECKLISTS_NR[norma]||[];
+  const normaNomes={'NR-11':'NR-11 — Transporte, Movimentação, Armazenagem e Manuseio de Materiais','NR-12':'NR-12 — Segurança no Trabalho em Máquinas e Equipamentos','NR-13':'NR-13 — Caldeiras, Vasos de Pressão e Tubulações'};
+  const itensHtml=itens.map((it,i)=>`
+    <div class="ckb-item">
+      <div class="ckb-num">${i+1}</div>
+      <div class="ckb-desc">
+        <div class="ckb-cod">${it.cod}</div>
+        <div>${it.desc}</div>
+        ${it.risco?`<div class="ckb-risco">⚠ Risco associado: ${it.risco}</div>`:''}
+      </div>
+      <div class="ckb-boxes">
+        <div class="ckb-box"><span class="box"></span>C</div>
+        <div class="ckb-box"><span class="box"></span>NC</div>
+        <div class="ckb-box"><span class="box"></span>N/A</div>
+      </div>
+      <div class="ckb-obs">Observações: ______________________________________________________________</div>
+    </div>`).join('');
+  return`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Checklist em Branco — ${norma}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:11px;color:#111;padding:15mm 18mm}
+h1{font-size:16px;font-weight:700}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #333;padding-bottom:10px;margin-bottom:12px}
+.logo-area .name{font-size:18px;font-weight:700}.logo-area .sub{font-size:10px;color:#666}
+.id-area{text-align:right;font-size:10px;color:#444}
+.campos{display:grid;grid-template-columns:1fr 1fr;gap:8px 20px;margin-bottom:14px;font-size:11px}
+.campo{border-bottom:1px solid #999;padding:6px 2px 3px;display:flex;align-items:flex-end}
+.campo .lbl{font-size:9px;text-transform:uppercase;color:#777;margin-right:6px}
+.campo .val{font-weight:600}
+.legenda{font-size:9.5px;color:#555;margin-bottom:10px;background:#f5f5f5;border-radius:4px;padding:6px 10px}
+.ckb-item{border:1px solid #ccc;border-radius:5px;padding:8px 10px;margin-bottom:8px;page-break-inside:avoid;display:grid;grid-template-columns:20px 1fr auto;column-gap:10px;row-gap:4px}
+.ckb-num{font-weight:700;color:#666}
+.ckb-cod{font-family:monospace;font-size:9px;color:#888;margin-bottom:2px}
+.ckb-risco{font-size:9.5px;color:#a15c00;margin-top:2px}
+.ckb-boxes{display:flex;gap:10px;align-items:center;font-size:10px;font-weight:600}
+.ckb-box{display:flex;align-items:center;gap:4px}
+.box{display:inline-block;width:13px;height:13px;border:1.4px solid #333;border-radius:2px}
+.ckb-obs{grid-column:1/-1;font-size:9.5px;color:#666;border-top:1px dashed #ccc;padding-top:4px;margin-top:2px}
+.mapa-sec{border:1.5px solid #444;border-radius:6px;padding:10px 14px;margin-bottom:14px;page-break-inside:avoid}
+.mapa-sec-title{font-weight:700;font-size:12px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.mapa-orient{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;margin-bottom:8px}
+.mapa-svg-box{text-align:center;flex-shrink:0}
+.mapa-svg-box .cap{font-size:9px;color:#777;margin-top:2px}
+.mapa-tabela{flex:1;min-width:220px}
+.mapa-tabela .ttl{font-size:9.5px;color:#666;margin-bottom:4px;font-weight:600}
+.pt-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.pt-box{border:1px solid #999;border-radius:3px;padding:3px 4px;font-size:9px;display:flex;flex-direction:column;gap:2px}
+.pt-box b{font-size:9px}
+.pt-box .ln{border-bottom:1px solid #666;height:11px}
+.mapa-obs{font-size:9px;color:#777;margin-top:6px}
+.footer{margin-top:20px;border-top:1px solid #ccc;padding-top:8px;display:flex;justify-content:space-between;font-size:9.5px;color:#555}
+@media print{@page{margin:15mm 18mm}}
+</style></head><body>
+<div class="hdr">
+  <div class="logo-area">
+    <div class="name">Junamar</div>
+    <div class="sub">CHECKLIST DE INSPEÇÃO — PREENCHIMENTO EM CAMPO</div>
+  </div>
+  <div class="id-area">
+    <div style="font-weight:700;font-size:13px">${normaNomes[norma]||norma}</div>
+    <div>Gerado em: ${new Date().toLocaleDateString('pt-BR')}</div>
+    ${engNome?`<div>Responsável técnico: ${engNome}${engCrea?' — CREA '+engCrea:''}</div>`:''}
+  </div>
+</div>
+<div class="campos">
+  <div class="campo"><span class="lbl">Cliente:</span><span class="val">${meta.cliente||'&nbsp;'}</span></div>
+  <div class="campo"><span class="lbl">Equipamento / TAG:</span><span class="val">${meta.tag||'&nbsp;'}</span></div>
+  <div class="campo"><span class="lbl">Local / Setor:</span><span class="val">${meta.local||'&nbsp;'}</span></div>
+  <div class="campo"><span class="lbl">Data da inspeção:</span><span class="val">${meta.data||'&nbsp;'}</span></div>
+  <div class="campo"><span class="lbl">Inspetor responsável:</span><span class="val">&nbsp;</span></div>
+  <div class="campo"><span class="lbl">Nº do laudo (a preencher no sistema):</span><span class="val">&nbsp;</span></div>
+</div>
+${norma==='NR-13'?_gerarSecaoMapaEspessuraBranco(meta.orientacao||'horizontal'):''}
+<div class="legenda">Marque C = Conforme, NC = Não Conforme ou N/A = Não Aplicável para cada item. Ao voltar do campo, transcreva as respostas e observações para o sistema ao criar o laudo.</div>
+${itensHtml}
+<div class="footer">
+  <div>Assinatura do Inspetor: ___________________________________</div>
+  <div>Página gerada por LaudosPRO — conforme ${norma}</div>
+</div>
+</body></html>`;
+}
+
 // ── SVG simplificado para PDF ──────────────────────────────
 function _gerarSVGEspessuraPDF(esp,orient){
   if(orient==='vertical'){
@@ -1879,6 +2072,57 @@ function _gerarSVGEspessuraPDF(esp,orient){
     <text x="200" y="84" text-anchor="middle" fill="#999" font-size="10" font-family="Arial">HORIZONTAL</text>
     ${[{x:40,y:35,n:1},{x:40,y:125,n:6},{x:15,y:80,n:17},{x:360,y:35,n:3},{x:360,y:125,n:9},{x:385,y:80,n:8},{x:110,y:10,n:19},{x:200,y:5,n:10},{x:290,y:10,n:20},{x:110,y:150,n:13},{x:200,y:155,n:12},{x:290,y:150,n:16},{x:110,y:80,n:2},{x:200,y:68,n:5},{x:290,y:80,n:4}].map(p=>{const v=esp[p.n-1];return v?`<circle cx="${p.x}" cy="${p.y}" r="11" fill="#1a6fc4" stroke="#58a6ff" stroke-width="1"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" fill="white" font-size="8" font-weight="700">${p.n}</text><text x="${p.x}" y="${p.y+20}" text-anchor="middle" fill="#333" font-size="7">${parseFloat(v).toFixed(1)}</text>`:''}).join('')}
   </svg>`;
+}
+
+// ── Pontos de medição por orientação (mesma numeração do PDF do laudo) ──
+function _pontosEspessura(orient){
+  if(orient==='vertical')return[1,2,3,4,5,6,7,8,9,10];
+  return[{x:40,y:35,n:1},{x:40,y:125,n:6},{x:15,y:80,n:17},{x:360,y:35,n:3},{x:360,y:125,n:9},{x:385,y:80,n:8},{x:110,y:10,n:19},{x:200,y:5,n:10},{x:290,y:10,n:20},{x:110,y:150,n:13},{x:200,y:155,n:12},{x:290,y:150,n:16},{x:110,y:80,n:2},{x:200,y:68,n:5},{x:290,y:80,n:4}].map(p=>p.n).sort((a,b)=>a-b);
+}
+// ── Mapa em branco (casco sem valores) para impressão de campo ──────────
+function _gerarSVGEspessuraBranco(orient){
+  if(orient==='vertical'){
+    return`<svg viewBox="0 0 240 300" width="180" height="225" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="120" cy="40" rx="80" ry="30" fill="none" stroke="#444" stroke-width="1.5"/>
+      <rect x="40" y="40" width="160" height="220" fill="none" stroke="#444" stroke-width="1.5"/>
+      <ellipse cx="120" cy="260" rx="80" ry="30" fill="none" stroke="#444" stroke-width="1.5"/>
+      <text x="120" y="150" text-anchor="middle" fill="#999" font-size="10" font-family="Arial">VERTICAL</text>
+      ${Array.from({length:10}).map((_,i)=>{const x=50+i%5*35,y=80+Math.floor(i/5)*60;return`<circle cx="${x}" cy="${y}" r="12" fill="#fff" stroke="#333" stroke-width="1.3"/><text x="${x}" y="${y+4}" text-anchor="middle" fill="#333" font-size="9" font-weight="700">${i+1}</text>`;}).join('')}
+    </svg>`;
+  }
+  const pts=[{x:40,y:35,n:1},{x:40,y:125,n:6},{x:15,y:80,n:17},{x:360,y:35,n:3},{x:360,y:125,n:9},{x:385,y:80,n:8},{x:110,y:10,n:19},{x:200,y:5,n:10},{x:290,y:10,n:20},{x:110,y:150,n:13},{x:200,y:155,n:12},{x:290,y:150,n:16},{x:110,y:80,n:2},{x:200,y:68,n:5},{x:290,y:80,n:4}];
+  return`<svg viewBox="0 0 400 160" width="340" height="136" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="60" cy="80" rx="50" ry="65" fill="none" stroke="#444" stroke-width="1.5"/>
+    <rect x="60" y="15" width="280" height="130" fill="none" stroke="#444" stroke-width="1.5"/>
+    <ellipse cx="340" cy="80" rx="50" ry="65" fill="none" stroke="#444" stroke-width="1.5"/>
+    <text x="200" y="84" text-anchor="middle" fill="#999" font-size="10" font-family="Arial">HORIZONTAL</text>
+    ${pts.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="11" fill="#fff" stroke="#333" stroke-width="1.3"/><text x="${p.x}" y="${p.y+4}" text-anchor="middle" fill="#333" font-size="8" font-weight="700">${p.n}</text>`).join('')}
+  </svg>`;
+}
+function _gerarTabelaPontosBranco(orient){
+  const pts=_pontosEspessura(orient);
+  return`<div class="mapa-tabela"><div class="ttl">Leituras de espessura (mm) — ponto a ponto:</div>
+    <div class="pt-grid">${pts.map(n=>`<div class="pt-box"><b>Pt ${n}</b><span class="ln"></span></div>`).join('')}</div>
+  </div>`;
+}
+function _gerarBlocoOrientacaoBranco(orient,titulo){
+  return`<div class="mapa-orient">
+    <div class="mapa-svg-box">${_gerarSVGEspessuraBranco(orient)}<div class="cap">${titulo}</div></div>
+    ${_gerarTabelaPontosBranco(orient)}
+  </div>`;
+}
+function _gerarSecaoMapaEspessuraBranco(orientacao){
+  let blocos='';
+  if(orientacao==='ambas'){
+    blocos=_gerarBlocoOrientacaoBranco('horizontal','Casco horizontal')+_gerarBlocoOrientacaoBranco('vertical','Casco vertical');
+  }else{
+    blocos=_gerarBlocoOrientacaoBranco(orientacao,orientacao==='vertical'?'Casco vertical':'Casco horizontal');
+  }
+  return`<div class="mapa-sec">
+    <div class="mapa-sec-title">📐 Mapa de Pontos — Medição de Espessura de Parede (Ultrassom)</div>
+    ${blocos}
+    <div class="mapa-obs">Método: Ultrassom Pulso-Eco • Unidade: mm • Anote a leitura de cada ponto conforme numeração indicada no desenho. Espessura nominal / mínima admissível: ______________</div>
+  </div>`;
 }
 
 // ════════════════════════════════════════
